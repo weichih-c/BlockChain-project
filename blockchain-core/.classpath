@@ -2,5 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/bcprov-jdk15on-156.jar"/>
+	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/guava-21.0.jar"/>
+	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/core-1.54.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
