@@ -439,6 +439,33 @@ public class Utils {
         return result;
     }
 
+	/** concatenate two Byte arrays
+	 * 
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+ 	public static byte[] concatenateByteArrays(byte[] a, byte[] b) {
+ 	    byte[] result = new byte[a.length + b.length]; 
+ 	    System.arraycopy(a, 0, result, 0, a.length); 
+ 	    System.arraycopy(b, 0, result, a.length, b.length); 
+ 	    return result;
+ 	}
+ 	
+ 	/**
+ 	 * Creates a copy of src and prepends b to the front of it
+ 	 * 
+ 	 * @param src
+ 	 * @param b
+ 	 * @return
+ 	 */
+    public static byte[] prependByte(byte[] src, byte b) {
+    	byte[] newHead = {b};
+        return concatenateByteArrays(newHead, src);
+    }
+ 	
+    
+    
     /**
      * Constructs a new String by decoding the given bytes using the specified charset.
      * <p>
@@ -457,6 +484,32 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
+    /**
+     * Turn the hex string into byte array format.
+     * 
+     * @param s
+     * @return
+     */
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                 + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+    
+    // encoding the byte[] to hex string (similar to "new BigInterger(1,hex).toString(16)")
+    public static String getHexString(byte[] b) {
+  		String result = "";
+  		for (int i = 0; i < b.length; i++) {
+  			result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+  		}
+  		return result;
+  	}
+    
 
     /**
      * Encodes the given string into a sequence of bytes using the named charset.

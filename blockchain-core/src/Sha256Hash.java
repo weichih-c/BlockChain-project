@@ -13,4 +13,8 @@ public class Sha256Hash {
 		if(hexString.length() == LENGTH * 2)
         	this.bytes = Utils.HEX.decode(hexString);
 	}
+	
+	public String toString(){
+		return Utils.HEX.encode(bytes);
+	}
 }

@@ -19,6 +19,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.util.encoders.Hex;
+
 public class KeyGenerator{
 	
 	public static void main(String[] args) throws InvalidKeySpecException, IOException{
@@ -80,8 +82,12 @@ public class KeyGenerator{
  
 		PrivateKey priv = keyPair.getPrivate();
 		System.out.println("Private Key: " + getHexString(priv.getEncoded()));
+		System.out.println("test = " + new String(Hex.encode( priv.getEncoded())));
+		System.out.println("test2 = " + new BigInteger(1, priv.getEncoded()).toString(16));
 	}
 	
+	
+	// encoding the byte[] to hex string
 	private static String getHexString(byte[] b) {
 		String result = "";
 		for (int i = 0; i < b.length; i++) {

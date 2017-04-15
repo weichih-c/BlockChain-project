@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 
 public class Receiver {
-	public String publicKeyHashAddress;
+	private String publicKeyHashAddress;
 	
 	public static void main(String[] args){
 		Receiver c = new Receiver();
@@ -20,7 +20,7 @@ public class Receiver {
 		
 	}
 	
-	public Receiver(  ){
+	public Receiver(){
 		try {
 			publicKeyHashAddress = generatePublicHashKey();
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
