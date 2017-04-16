@@ -17,4 +17,8 @@ public class Sha256Hash {
 	public String toString(){
 		return Utils.HEX.encode(bytes);
 	}
+	
+	public byte[] getBytes(){
+		return bytes;
+	}
 }

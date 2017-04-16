@@ -24,6 +24,7 @@ import com.google.common.io.Resources;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.UnsignedLongs;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -484,6 +486,35 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
+    /**
+     * turn the long type number to Hexadecimal type and decode to byte array.
+     * @param num
+     * @return the decoded byte array
+     */
+    public static byte[] getHexEncodeByteArray(long num){
+    	return Hex.decode(Long.toHexString(num));
+    }
+    
+    /**
+     * decode the hex string to byte array.
+     * @param num
+     * @return the decoded byte array
+     */
+    public static byte[] getHexEncodeByteArray(String hexString){
+    	return Hex.decode(hexString);
+    }
+    
+    /**
+     * decode the int to hex type and set a 4 Byte array.
+     * 
+     * @param num
+     * @return
+     */
+    public static byte[] getIntByteArray(int num){
+    	return ByteBuffer.allocate(4).putInt(1).array();
+    }
+    
     
     /**
      * Turn the hex string into byte array format.

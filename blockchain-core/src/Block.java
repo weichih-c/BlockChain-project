@@ -1,12 +1,15 @@
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import org.spongycastle.util.encoders.Hex;
 
+import com.google.common.primitives.Longs;
+
 public class Block {
 	
 	// Fields defined as part of the protocol format.
-    private long version;
+    private int version;
     private Sha256Hash prevBlockHash;
     private Sha256Hash merkleRoot;
     private long time;
@@ -17,7 +20,7 @@ public class Block {
     private Sha256Hash hash;    // Stores the hash of the block.
 
     public Block(){
-    	this.version = 00000001L;
+    	this.version = 1;
     	this.transactions = new ArrayList<>();
     }
     
@@ -50,23 +53,25 @@ public class Block {
 //    	System.out.println("scriptPubKey = " + getHexString(scriptPubKey));
     	
     	Block b = new Block().createGenesisBlock();
-    	System.out.println("version = " + b.getVersion());
-    	System.out.println("PrevBlockHash = " + b.getPrevBlockHash().toString());
-    	System.out.println("MerkleRoot = " + b.getMerkleRoot().toString());
-    	System.out.println("TimeStamp = " + b.getTime());
-    	System.out.println("nBits = " + b.getDifficultyTarget());
-    	System.out.println("Nonce = " + b.getNonce());
-    	System.out.println("Transaction sizes = " + b.getTransactionSize());
-    	System.out.println("Tx1-Version = " + b.getTransactions().get(0).getVersion());
-    	System.out.println("Tx1-Input numbers = " + b.getTransactions().get(0).getTxInputsSize());
-    	System.out.println("Tx1-Vin1-PrevOutput = " + b.getTransactions().get(0).getTxInputs().get(0).getPrev_hash().toString());
-    	System.out.println("Tx1-Vin1-ScriptLen = " + b.getTransactions().get(0).getTxInputs().get(0).getScriptLen());
-    	System.out.println("Tx1-Vin1-ScriptSig = " + getHexString( b.getTransactions().get(0).getTxInputs().get(0).getScriptSignature()) );
-    	System.out.println("Tx1-Output numbers = " + b.getTransactions().get(0).getTxOutputsSize());
-    	System.out.println("Tx1-Vout1-Value = " + b.getTransactions().get(0).getTxOutputs().get(0).getValue());
-    	System.out.println("Tx1-Vout1-pk_ScriptLen = " + b.getTransactions().get(0).getTxOutputs().get(0).getScriptLen());
-    	System.out.println("Tx1-Vout1-pk_Script = " + getHexString( b.getTransactions().get(0).getTxOutputs().get(0).getScriptPubKey()) );
+//    	System.out.println("version = " + b.getVersion());
+//    	System.out.println("PrevBlockHash = " + b.getPrevBlockHash().toString());
+//    	System.out.println("MerkleRoot = " + b.getMerkleRoot().toString());
+//    	System.out.println("TimeStamp = " + b.getTime());
+//    	System.out.println("nBits = " + b.getDifficultyTarget());
+//    	System.out.println("Nonce = " + b.getNonce());
+//    	System.out.println("Transaction sizes = " + b.getTransactionSize());
+//    	System.out.println("Tx1-Version = " + b.getTransactions().get(0).getVersion());
+//    	System.out.println("Tx1-Input numbers = " + b.getTransactions().get(0).getTxInputsSize());
+//    	System.out.println("Tx1-Vin1-PrevOutput = " + b.getTransactions().get(0).getTxInputs().get(0).getPrev_hash().toString());
+//    	System.out.println("Tx1-Vin1-ScriptLen = " + b.getTransactions().get(0).getTxInputs().get(0).getScriptLen());
+//    	System.out.println("Tx1-Vin1-ScriptSig = " + getHexString( b.getTransactions().get(0).getTxInputs().get(0).getScriptSignature()) );
+//    	System.out.println("Tx1-Output numbers = " + b.getTransactions().get(0).getTxOutputsSize());
+//    	System.out.println("Tx1-Vout1-Value = " + b.getTransactions().get(0).getTxOutputs().get(0).getValue());
+//    	System.out.println("Tx1-Vout1-pk_ScriptLen = " + b.getTransactions().get(0).getTxOutputs().get(0).getScriptLen());
+//    	System.out.println("Tx1-Vout1-pk_Script = " + getHexString( b.getTransactions().get(0).getTxOutputs().get(0).getScriptPubKey()) );
+		
 
+    	b.getBlockHeaderHash(b);
     }
     
  // encoding the byte[] to hex string
@@ -78,7 +83,7 @@ public class Block {
  		return result;
  	}
     
-    public Block(long version, Sha256Hash prevBlockHash, Sha256Hash merkleRoot, long time, long difficultyTarget, long nonce){
+    public Block(int version, Sha256Hash prevBlockHash, Sha256Hash merkleRoot, long time, long difficultyTarget, long nonce){
     	this.version = version;
     	this.prevBlockHash = prevBlockHash;
     	this.setMerkleRoot(merkleRoot);
@@ -89,7 +94,7 @@ public class Block {
     
     
     public Block createGenesisBlock(){
-    	final long version = 00000001L;
+    	final int version = 1;
     	final Sha256Hash prevBlockHash = new Sha256Hash("0000000000000000000000000000000000000000000000000000000000000000");
     	final Sha256Hash merkleRoot = new Sha256Hash("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
     	final long time = 1230977705L;
@@ -137,11 +142,15 @@ public class Block {
     	return genesisBlock;
     }
 
-	public long getVersion() {
+	public int getVersion() {
 		return version;
 	}
+	
+	public String getVersionInString(){
+		return Long.toString(version, 16);
+	}
 
-	public void setVersion(long version) {
+	public void setVersion(int version) {
 		this.version = version;
 	}
 
@@ -195,5 +204,31 @@ public class Block {
 	
 	public ArrayList<Transaction> getTransactions(){
 		return transactions;
+	}
+	
+	
+	/**
+	 * hash the block header, and return a hex String
+	 * 
+	 * @param b
+	 * @return
+	 */
+	public String getBlockHeaderHash(Block b){
+		byte[] blockHeader;
+		
+		byte[] version = Utils.getIntByteArray(b.getVersion());
+		blockHeader = Arrays.copyOf(version, version.length);
+		blockHeader = Utils.concatenateByteArrays(blockHeader, b.getPrevBlockHash().getBytes());
+		blockHeader = Utils.concatenateByteArrays(blockHeader, b.getMerkleRoot().getBytes());
+		byte[] time = Utils.getHexEncodeByteArray(b.getTime());
+		blockHeader = Utils.concatenateByteArrays(blockHeader, time);
+		byte[] nBits = Utils.getHexEncodeByteArray(b.getDifficultyTarget());
+		blockHeader = Utils.concatenateByteArrays(blockHeader, nBits);
+		byte[] nonce = Utils.getHexEncodeByteArray(b.getNonce());
+		blockHeader = Utils.concatenateByteArrays(blockHeader, nonce);
+		
+		byte[] blockHash = HashGenerator.hashingSHA256Twice(blockHeader);
+
+		return getHexString(blockHash);
 	}
 }
