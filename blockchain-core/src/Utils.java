@@ -27,6 +27,7 @@ import org.spongycastle.crypto.digests.RIPEMD160Digest;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -512,7 +513,7 @@ public class Utils {
      * @return
      */
     public static byte[] getIntByteArray(int num){
-    	return ByteBuffer.allocate(4).putInt(1).array();
+    	return ByteBuffer.allocate(4).putInt(num).array();
     }
     
     
@@ -530,6 +531,11 @@ public class Utils {
                                  + Character.digit(s.charAt(i+1), 16));
         }
         return data;
+    }
+    
+    // encoding the plaintext text to hex format string
+    public static String encodePlaintextToHexFormat(String text){
+    	return getHexString(text.getBytes());
     }
     
     // encoding the byte[] to hex string (similar to "new BigInterger(1,hex).toString(16)")
@@ -728,4 +734,5 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
 }

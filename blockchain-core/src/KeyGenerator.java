@@ -23,17 +23,17 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class KeyGenerator{
 	
-	public static void main(String[] args) throws InvalidKeySpecException, IOException{
-		KeyGenerator kg = new KeyGenerator();
-		try {
-			kg.keyGenerate();
-		} catch (NoSuchAlgorithmException e) {
-			System.out.println("Error: " + e.getMessage());
-		}
-	}
+//	public static void main(String[] args) throws InvalidKeySpecException, IOException{
+//		KeyGenerator kg = new KeyGenerator();
+//		try {
+//			kg.keyGenerate("public3.key", "private3.key");
+//		} catch (NoSuchAlgorithmException e) {
+//			System.out.println("Error: " + e.getMessage());
+//		}
+//	}
 	
 	
-	public void keyGenerate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+	public void keyGenerate(String pubKeyName, String privateKeyName) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
 		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 		
@@ -48,10 +48,10 @@ public class KeyGenerator{
 		String keyStorePath = System.getProperty("user.dir");
 		keyStorePath = keyStorePath + "/keystore";
 		createKeystore(keyStorePath);
-		saveKeyPair(keyStorePath, pair);
+		saveKeyPair(keyStorePath, pair, pubKeyName, privateKeyName);
 		
 		//LoadFromFile
-		KeyPair pair2 = loadKeyPair(keyStorePath, "EC");
+		KeyPair pair2 = loadKeyPair(keyStorePath, "EC", pubKeyName, privateKeyName);
 		System.out.println("Keys After Saving");
 		dumpKeyPair(pair2);
 		
@@ -97,40 +97,40 @@ public class KeyGenerator{
 	}
 
 	// Saving the key pairs to key stores. Naming respectively.
-	public void saveKeyPair(String path, KeyPair keyPair) throws IOException {
+	public void saveKeyPair(String path, KeyPair keyPair, String pubKeyName, String privateKeyName) throws IOException {
 		PrivateKey privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
  
 		// Store Public Key.
 		X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
 				publicKey.getEncoded());
-		FileOutputStream fos = new FileOutputStream(path + "/public2.key");
+		FileOutputStream fos = new FileOutputStream(path + File.separator + pubKeyName);
 		fos.write(x509EncodedKeySpec.getEncoded());
 		fos.close();
  
 		// Store Private Key.
 		PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
 				privateKey.getEncoded());
-		fos = new FileOutputStream(path + "/private2.key");
+		fos = new FileOutputStream(path + File.separator + privateKeyName);
 		fos.write(pkcs8EncodedKeySpec.getEncoded());
 		fos.close();
 	}
  
 	
 	// Load the keyPair from keyStore path
-	public KeyPair loadKeyPair(String path, String algorithm)
+	public KeyPair loadKeyPair(String keystorePath, String algorithm, String pubKeyName, String privateKeyName)
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException {
 		// Read Public Key.
-		File filePublicKey = new File(path + "/public2.key");
-		FileInputStream fis = new FileInputStream(path + "/public2.key");
+		File filePublicKey = new File(keystorePath + File.separator + pubKeyName);
+		FileInputStream fis = new FileInputStream(keystorePath + File.separator + pubKeyName);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
 		fis.read(encodedPublicKey);
 		fis.close();
  
 		// Read Private Key.
-		File filePrivateKey = new File(path + "/private2.key");
-		fis = new FileInputStream(path + "/private2.key");
+		File filePrivateKey = new File(keystorePath + File.separator + privateKeyName);
+		fis = new FileInputStream(keystorePath + File.separator + privateKeyName);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
 		fis.read(encodedPrivateKey);
 		fis.close();

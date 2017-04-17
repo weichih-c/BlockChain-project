@@ -1,16 +1,20 @@
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class TransactionInput {
-	private Sha256Hash prev_hash;
+public class TransactionInput implements Serializable{
+	private String prev_hash;
 	private BigInteger prev_txOut_index;
 	private BigInteger scriptLen;
 	private byte[] scriptSignature;
 	
-	public Sha256Hash getPrev_hash() {
+	public TransactionInput(){
+	}
+	
+	public String getPrev_hash() {
 		return prev_hash;
 	}
 	
-	public void setPrev_hash(Sha256Hash prev_hash) {
+	public void setPrev_hash(String prev_hash) {
 		this.prev_hash = prev_hash;
 	}
 	

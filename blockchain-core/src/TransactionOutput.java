@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class TransactionOutput {
+public class TransactionOutput implements Serializable{
 	private long value;
 	private BigInteger scriptLen;
 	private byte[] scriptPubKey;
