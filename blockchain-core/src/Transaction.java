@@ -8,9 +8,7 @@ import org.apache.commons.lang3.*;
 public class Transaction {
 	private Sha256Hash tx_hash;
 	private int version;
-	private BigInteger in_counter;
 	private ArrayList<TransactionInput> tx_Inputs;
-	private BigInteger out_counter;
 	private ArrayList<TransactionOutput> tx_Outputs;
 	private boolean isSpent;
 	
@@ -31,18 +29,18 @@ public class Transaction {
 		byte[] tx;
 		byte[] version = reverseEndian( Utils.getIntByteArray(this.version));
 		tx = Arrays.copyOf(version, version.length);	// add version to tx
-		tx = Utils.concatenateByteArrays(tx, reverseEndian( Utils.bigIntegerToBytes(this.in_counter, 4)));	// add in_counter to tx
+		tx = Utils.concatenateByteArrays(tx, reverseEndian( Utils.getIntByteArray(this.tx_Inputs.size())));	// add in_counter to tx
 
-		List<byte[]> bList = encodeInputListToByteArray(tx_Inputs);
+		List<byte[]> bList = encodeInputListToByteArray(this.tx_Inputs);
 		byte[] tIns = {};
 		for(byte[] b : bList){
 			tIns = Utils.concatenateByteArrays(tIns, b);	// gathering all inputs together
 		}
 		tx = Utils.concatenateByteArrays(tx, reverseEndian( tIns ));	// add tx_Ins to tx
 		
-		tx = Utils.concatenateByteArrays(tx, reverseEndian( Utils.bigIntegerToBytes(this.out_counter, 4)));	// add out_counter to tx
+		tx = Utils.concatenateByteArrays(tx, reverseEndian( Utils.getIntByteArray(this.tx_Outputs.size())));	// add out_counter to tx
 		
-		List<byte[]> bList2 = encodeOutputListToByteArray(tx_Outputs);
+		List<byte[]> bList2 = encodeOutputListToByteArray(this.tx_Outputs);
 		byte[] tOuts = {};
 		for(byte[] b : bList2){
 			tOuts = Utils.concatenateByteArrays(tOuts, b);	// gathering all inputs together
@@ -66,10 +64,6 @@ public class Transaction {
 		this.version = version;
 	}
 
-	public BigInteger getIn_counter() {
-		return in_counter;
-	}
-
 	public int getTxInputsSize() {
 		return tx_Inputs.size();
 	}
@@ -80,11 +74,7 @@ public class Transaction {
 
 	public void addTxInput(TransactionInput tx_Input) {
 		this.tx_Inputs.add( tx_Input );
-		this.in_counter = new BigInteger(Integer.toHexString( tx_Inputs.size() ), 16);
-	}
-
-	public BigInteger getOut_counter() {
-		return out_counter;
+//		this.in_counter = new BigInteger(Integer.toHexString( tx_Inputs.size() ), 16);
 	}
 
 	public int getTxOutputsSize() {
@@ -97,7 +87,7 @@ public class Transaction {
 
 	public void addTxOutput(TransactionOutput tx_Output) {
 		this.tx_Outputs.add( tx_Output );
-		this.out_counter = new BigInteger(Integer.toHexString( tx_Outputs.size() ), 16);
+//		this.out_counter = new BigInteger(Integer.toHexString( tx_Outputs.size() ), 16);
 	}
 	
 	public void setTxSpent(){
@@ -108,18 +98,18 @@ public class Transaction {
 		return isSpent;
 	}
 	
-	public static byte[] encodeTransactionInputToByte(TransactionInput txIn){
+	public byte[] encodeTransactionInputToByte(TransactionInput txIn){
 		byte[] data = SerializationUtils.serialize(txIn);
 		return data;
 	}
 	
-	public static TransactionInput decodeByteToTransactionInput(byte[] data){
+	public TransactionInput decodeByteToTransactionInput(byte[] data){
 		TransactionInput txIn = (TransactionInput) SerializationUtils.deserialize(data);
 		return txIn;
 	}
 	
 	// write TransactionInput to byte array
-	public static List<byte[]> encodeInputListToByteArray(ArrayList<TransactionInput> list){
+	public List<byte[]> encodeInputListToByteArray(ArrayList<TransactionInput> list){
 		
 		List<byte[]> tmp = new ArrayList<>();
 		for(TransactionInput in : list){
@@ -131,7 +121,7 @@ public class Transaction {
     }
 	
 	// decode to transactionInput array
-	public static ArrayList<TransactionInput> decodeByteArrayToInputList(List<byte[]> byteList){
+	public ArrayList<TransactionInput> decodeByteArrayToInputList(List<byte[]> byteList){
 		
 		ArrayList<TransactionInput> list = new ArrayList<>();
 		for(byte[] arr : byteList){
@@ -142,18 +132,18 @@ public class Transaction {
 		return list;
 	}
 	
-	public static byte[] encodeTransactionOutputToByte(TransactionOutput txOut){
+	public byte[] encodeTransactionOutputToByte(TransactionOutput txOut){
 		byte[] data = SerializationUtils.serialize(txOut);
 		return data;
 	}
 	
-	public static TransactionOutput decodeByteToTransactionOutput(byte[] data){
+	public TransactionOutput decodeByteToTransactionOutput(byte[] data){
 		TransactionOutput txOut = (TransactionOutput) SerializationUtils.deserialize(data);
 		return txOut;
 	}
 	
 	// write TransactionOutput to byte array
-	public static List<byte[]> encodeOutputListToByteArray(ArrayList<TransactionOutput> list){
+	public List<byte[]> encodeOutputListToByteArray(ArrayList<TransactionOutput> list){
 		
 		List<byte[]> tmp = new ArrayList<>();
 		for(TransactionOutput in : list){
@@ -165,7 +155,7 @@ public class Transaction {
     }
 	
 	// decode to transactionOutput array
-	public static ArrayList<TransactionOutput> decodeByteArrayToOutputList(List<byte[]> byteList){
+	public ArrayList<TransactionOutput> decodeByteArrayToOutputList(List<byte[]> byteList){
 		
 		ArrayList<TransactionOutput> list = new ArrayList<>();
 		for(byte[] arr : byteList){

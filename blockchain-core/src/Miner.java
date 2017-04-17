@@ -20,7 +20,7 @@ public class Miner {
 		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
 		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
 		
-		String keyPath = Constant.getPubKeyPath("public2");
+		String keyPath = Constant.getKeyPath("public2");
 		Receiver miner1 = new Receiver(keyPath);
 		Transaction newTx = new Miner().createCoinbaseTx(miner1);
 		
@@ -33,11 +33,22 @@ public class Miner {
 			e.printStackTrace();
 		}
 		
+		int nonce = calculateNonce(bb);	// create a nonce, and next step is push to chain.
+		
 
-		System.out.println("Nonce = " + calculateNonce(bb) );
-		System.out.println("Hi = " + bb.getNonce());
-		
-		
+		System.out.println("BlockHash = " + bb.getBlockHeaderHash());
+		System.out.println("Block Version = " + bb.getVersion());
+		System.out.println("Block PrevBlockHash = " + bb.getPrevBlockHash());
+		System.out.println("Block MerkleRoot = " + bb.getMerkleRoot());
+		System.out.println("Block Time = " + bb.getTime());
+		System.out.println("Block Difficulty = " + bb.getDifficultyTarget());
+		System.out.println("Block Nonce = " + bb.getNonce());
+		System.out.println("Block Transaction Size = " + bb.getTransactionSize());
+		Transaction tx = bb.getTransactions().get(0);
+		System.out.println("Transaction 1 Hash = " + tx.getTx_hash().toString());
+		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
+		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
+
 		
 //		SecureRandom r = new SecureRandom();
 //		byte[] randByte = new byte[8];
@@ -66,7 +77,7 @@ public class Miner {
 	            (b[0] & 0xFF) << 24;
 	}
 	
-	public static long calculateNonce(Block block){
+	public static int calculateNonce(Block block){
 		while(true){
 			SecureRandom r = new SecureRandom();
 			int nonce;
@@ -81,8 +92,10 @@ public class Miner {
 //		    buffer.flip();//need flip 
 //		    long nonce = buffer.getInt();
 		    block.setNonce(nonce);
-			
-			if(block.getBlockHeaderHash().startsWith("000")){
+		    String hash = block.getBlockHeaderHash();
+			System.out.println("Calculating...Hash = " + hash);
+
+			if(hash.startsWith("000")){
 				return nonce;
 			}
 		}

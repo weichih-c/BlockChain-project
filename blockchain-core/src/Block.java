@@ -53,24 +53,25 @@ public class Block {
 //    	System.out.println("scriptPubKey = " + getHexString(scriptPubKey));
     	
     	Block b = new Block().createGenesisBlock();
-//    	System.out.println("version = " + b.getVersion());
-//    	System.out.println("PrevBlockHash = " + b.getPrevBlockHash().toString());
-//    	System.out.println("MerkleRoot = " + b.getMerkleRoot().toString());
-//    	System.out.println("TimeStamp = " + b.getTime());
-//    	System.out.println("nBits = " + b.getDifficultyTarget());
-//    	System.out.println("Nonce = " + b.getNonce());
-//    	System.out.println("Transaction sizes = " + b.getTransactionSize());
-//    	System.out.println("Tx1-Version = " + b.getTransactions().get(0).getVersion());
-//    	System.out.println("Tx1-Input numbers = " + b.getTransactions().get(0).getTxInputsSize());
-//    	System.out.println("Tx1-Vin1-PrevOutput = " + b.getTransactions().get(0).getTxInputs().get(0).getPrev_hash().toString());
-//    	System.out.println("Tx1-Vin1-ScriptLen = " + b.getTransactions().get(0).getTxInputs().get(0).getScriptLen());
-//    	System.out.println("Tx1-Vin1-ScriptSig = " + getHexString( b.getTransactions().get(0).getTxInputs().get(0).getScriptSignature()) );
-//    	System.out.println("Tx1-Output numbers = " + b.getTransactions().get(0).getTxOutputsSize());
-//    	System.out.println("Tx1-Vout1-Value = " + b.getTransactions().get(0).getTxOutputs().get(0).getValue());
-//    	System.out.println("Tx1-Vout1-pk_ScriptLen = " + b.getTransactions().get(0).getTxOutputs().get(0).getScriptLen());
-//    	System.out.println("Tx1-Vout1-pk_Script = " + getHexString( b.getTransactions().get(0).getTxOutputs().get(0).getScriptPubKey()) );
+    	System.out.println("This block Hash = " + b.getBlockHeaderHash() );
+    	System.out.println("version = " + b.getVersion());
+    	System.out.println("PrevBlockHash = " + b.getPrevBlockHash().toString());
+    	System.out.println("MerkleRoot = " + b.getMerkleRoot().toString());
+    	System.out.println("TimeStamp = " + b.getTime());
+    	System.out.println("nBits = " + b.getDifficultyTarget());
+    	System.out.println("Nonce = " + b.getNonce());
+    	System.out.println("Transaction sizes = " + b.getTransactionSize());
+    	System.out.println("Tx1-Version = " + b.getTransactions().get(0).getVersion());
+    	System.out.println("Tx1-Input numbers = " + b.getTransactions().get(0).getTxInputsSize());
+    	System.out.println("Tx1-Vin1-PrevOutput = " + b.getTransactions().get(0).getTxInputs().get(0).getPrev_hash().toString());
+    	System.out.println("Tx1-Vin1-ScriptLen = " + b.getTransactions().get(0).getTxInputs().get(0).getScriptLen());
+    	System.out.println("Tx1-Vin1-ScriptSig = " + getHexString( b.getTransactions().get(0).getTxInputs().get(0).getScriptSignature()) );
+    	System.out.println("Tx1-Output numbers = " + b.getTransactions().get(0).getTxOutputsSize());
+    	System.out.println("Tx1-Vout1-Value = " + b.getTransactions().get(0).getTxOutputs().get(0).getValue());
+    	System.out.println("Tx1-Vout1-pk_ScriptLen = " + b.getTransactions().get(0).getTxOutputs().get(0).getScriptLen());
+    	System.out.println("Tx1-Vout1-pk_Script = " + getHexString( b.getTransactions().get(0).getTxOutputs().get(0).getScriptPubKey()) );
 		
-    	System.out.println( b.getBlockHeaderHash() );
+//    	System.out.println("This block Hash = " + b.getBlockHeaderHash() );
     }
     
  // encoding the byte[] to hex string
@@ -123,7 +124,7 @@ public class Block {
     	
     	TransactionOutput txOut = new TransactionOutput();
     	txOut.setValue(5000000000L);
-    	String keyStorePath = Constant.getPubKeyPath("public.key");
+    	String keyStorePath = Constant.getKeyPath("public.key");
     	Receiver chainCreator = new Receiver(keyStorePath);
     	byte[] scriptPubKey = chainCreator.getPublicKeyHashAddress().getBytes();
     	
@@ -234,11 +235,11 @@ public class Block {
 //		System.out.println(getHexString(nBits));
 		blockHeader = Utils.concatenateByteArrays(blockHeader, nBits);
 		byte[] nonce = reverseEndian(Utils.getIntByteArray(this.nonce));
-		System.out.println("Nonce = " + getHexString(nonce));
+//		System.out.println("Nonce = " + getHexString(nonce));
 		blockHeader = Utils.concatenateByteArrays(blockHeader, nonce);
 		byte[] blockHash = reverseEndian(HashGenerator.hashingSHA256Twice(blockHeader));
 		
-		System.out.println("Hash = " + getHexString(blockHash));
+//		System.out.println("Hash = " + getHexString(blockHash));
 		return getHexString(blockHash);
 	}
 

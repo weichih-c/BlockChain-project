@@ -56,24 +56,34 @@ public class KeyGenerator{
 		dumpKeyPair(pair2);
 		
 		
-//        /*
-//         * Create a Signature object and initialize it with the private key
-//         */
-//
-//        Signature dsa = Signature.getInstance("SHA256withECDSA");
-//
-//        dsa.initSign(priv);
-//        
-////        System.out.println("Sig Private = " + );
-//
-//        String str = "This is string to sign";
-//        byte[] strByte = str.getBytes("UTF-8");
-//        dsa.update(strByte);
-//        
-//        byte[] realSig = dsa.sign();
-//        System.out.println("Signature: " + new BigInteger(1, realSig).toString(16));
+
 
 	}
+	
+	
+	/*
+     * Create a Signature object and initialize it with the private key
+     */
+	public byte[] makeSignature(PrivateKey priv, byte[] txData){
+      
+		Signature dsa;
+		try {
+			dsa = Signature.getInstance("SHA256withECDSA");
+			
+		     dsa.initSign(priv);	// Sign Key with ECDSA Curve
+		
+		     dsa.update(txData);	// set the data to be signed.
+		     
+		     byte[] realSig = dsa.sign();	// signing the data
+		     System.out.println("Signature: " + new BigInteger(1, realSig).toString(16));
+		
+		     return realSig;
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+			System.out.println("Error" + e.getMessage());
+			return null;
+		}
+	}
+	
 	
 	// print out the key pairs
 	private void dumpKeyPair(KeyPair keyPair) {

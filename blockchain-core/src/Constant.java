@@ -3,7 +3,7 @@ import java.io.File;
 public class Constant {
 	
 	
-	public static String getPubKeyPath(String keyName){
+	public static String getKeyPath(String keyName){
 		String keyStorePath = System.getProperty("user.dir");
 		keyStorePath = keyStorePath + "/keystore";
 		
@@ -13,4 +13,6 @@ public class Constant {
 		}
 		return keyStorePath + File.separator + keyName;
 	}
+	
+	
 }
