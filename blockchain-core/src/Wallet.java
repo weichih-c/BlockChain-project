@@ -10,6 +10,9 @@ public class Wallet {
 	private ArrayList<String> publicHashKeyList = new ArrayList<>();
 	private ArrayList<UnspentTXO> utxoList = new ArrayList<>();
 	private String keyInUse;
+	private String pubKeyPath;
+	private String privKeyPath;
+	private String walletName;
 	
 	public static void main (String [] args){
 		Wallet w = new Wallet();
@@ -24,8 +27,11 @@ public class Wallet {
 		String[] keyName = rs.generateKeyPairName();
 		
 		try {
+			this.walletName = keyName[0];
 			keyUtil.keyGenerate(keyName[0], keyName[1]);	// 0 is pubKey, 1 is privKey
-			Receiver receiver = new Receiver( Constant.getKeyPath(keyName[0]) );
+			this.pubKeyPath = Constant.getKeyPath(keyName[0]);
+			this.privKeyPath = Constant.getKeyPath(keyName[1]);
+			Receiver receiver = new Receiver( pubKeyPath );
 			publicHashKeyList.add(receiver.getPublicKeyHashAddress());
 			
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
@@ -36,8 +42,11 @@ public class Wallet {
 
 	}
 	
-	public Wallet(String keyName){
-		Receiver receiver = new Receiver( Constant.getKeyPath(keyName) );
+	public Wallet(String pubkeyName, String privkeyNAme){
+		this.walletName = pubkeyName;
+		this.pubKeyPath = Constant.getKeyPath(pubkeyName);
+		this.privKeyPath = Constant.getKeyPath(privkeyNAme);
+		Receiver receiver = new Receiver( Constant.getKeyPath(pubkeyName) );
 		publicHashKeyList.add(receiver.getPublicKeyHashAddress());
 		this.balance = new BigInteger("0");
 	}
@@ -55,7 +64,6 @@ public class Wallet {
 	 * @param transaction
 	 */
 	public void receiveMoney(Transaction transaction){
-		System.out.println("Receive Money");
 		UnspentTXO utxo = new UnspentTXO();
 		utxo.setTransactionHash(transaction.getTx_hash());
 		
@@ -64,11 +72,87 @@ public class Wallet {
 		TransactionOutput txOut = transaction.getTxOutputs().get(index);
 		utxo.setIndexOfTxOutput(index);
 		utxo.setValue(txOut.getValue());
-		System.out.println("Receive " + txOut.getValue());
+		System.out.println("User - " + walletName + " received " + txOut.getValue());
 		utxo.setScriptPubKey(txOut.getScriptPubKey());
 		
 		utxoList.add(utxo);
 	}
+	
+	
+	public Transaction createGeneralTransaction(int value, Wallet recevierWallet){
+//		public Transaction createGeneralTransaction(ArrayList<UnspentTXO> utxoList, double value, Wallet recevierWallet){
+		BigInteger spentValue = new BigInteger(Integer.toString(value));
+		BigInteger payUTXOAmount = new BigInteger("0");
+		ArrayList<UnspentTXO> readyToSpentTXO = new ArrayList<>();
+		
+		for(UnspentTXO utxo : utxoList){
+			// if pay < spentValue
+			if(payUTXOAmount.compareTo(spentValue) < 0){
+				payUTXOAmount.add(utxo.getValue());
+				readyToSpentTXO.add(utxo);
+				utxo.setSpent(true);
+			}
+		}
+		
+		
+		
+		Transaction tx = new Transaction();
+		TransactionOutput txOut = new TransactionOutput();
+		txOut.setValue(spentValue);
+		
+		// use the first key address.(Simple implementation)
+		byte[] scriptPubKey = recevierWallet.showPubKeyAddress(0).getBytes();
+
+    	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_HASH160);
+    	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);
+    	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_EQUALVERIFY);
+    	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_CHECKSIG);
+    	
+    	txOut.setScriptPubKey(scriptPubKey);	// adding the opCodes to scriptPubKey in TXOut
+    	txOut.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey.length), 16));
+    	tx.addTxOutput(txOut);
+    	
+    	// there are changes after paying
+    	if(payUTXOAmount.compareTo(spentValue) > 0){
+    		TransactionOutput txOut_Change = new TransactionOutput();
+    		txOut_Change.setValue(payUTXOAmount.subtract(spentValue));
+    		
+    		// use the first key address.(Simple implementation)
+    		byte[] scriptPubKey_change = recevierWallet.showPubKeyAddress(0).getBytes();
+
+    		scriptPubKey_change = Utils.prependByte(scriptPubKey_change, OpCode.OP_HASH160);
+    		scriptPubKey_change = Utils.prependByte(scriptPubKey_change, OpCode.OP_DUP);
+    		scriptPubKey_change = Utils.appendByte(scriptPubKey_change, OpCode.OP_EQUALVERIFY);
+    		scriptPubKey_change = Utils.appendByte(scriptPubKey_change, OpCode.OP_CHECKSIG);
+        	
+    		txOut_Change.setScriptPubKey(scriptPubKey_change);	// adding the opCodes to scriptPubKey in TXOut
+    		txOut_Change.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey_change.length), 16));
+    		tx.addTxOutput(txOut_Change);
+    	}
+    	
+		for(int a=0; a < readyToSpentTXO.size(); a++){
+			TransactionInput txIn = new TransactionInput();
+			txIn.setPrev_hash(readyToSpentTXO.get(a).getTransactionHash().toString());
+			txIn.setPrev_txOut_index("" + readyToSpentTXO.get(a).getIndexOfTxOutput());
+			txIn.setScriptSignature(null);
+			txIn.setScriptLen("0");
+			tx.addTxInput(txIn);
+		}
+		
+		
+		Consumer consumer = new Consumer(pubKeyPath, privKeyPath);
+		try {
+//			System.out.println("txIn scriptSig before makeSS = " + Utils.getHexString( tx.getTxInputs().get(0).getScriptSignature()));
+			ArrayList<TransactionInput> txIns = consumer.makeScriptSignature(tx, utxoList);
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
+			System.out.println(e.getMessage());
+		}
+		// TODO: 理論上過完makeFunction, 原本的tx裡的Inputs應該也會被改到, 用print驗證看看
+		
+		return tx;
+	}
+	
+	
 	
 	// counting which transactionOutput index that the key of this wallet be used in
 	private int countIndexInTxOut(Transaction tx){
@@ -78,10 +162,17 @@ public class Wallet {
 			TransactionOutput txOut = txOutList.get(i);
 			String keyInTxOut = keyRemoveOpcodes(txOut.getScriptPubKey());	// removing opcodes in scriptPubKey
 			
+			/* this is because original keyInUse is in Base58 encoding,
+			 * so has be re encoding in hex format
+			 * 
+			 * it is a bad implementation, but just a workaround.
+			 */
+			keyInUse = Utils.getHexString(keyInUse.getBytes());	
+			
 			// compare which key in OutputList belongs to this wallet
 			if(keyInUse.equals(keyInTxOut)){
 				index = i;
-				System.out.println("it match the " + i + " index in Tx");
+//				System.out.println("it match the " + i + " index in Tx");
 				break;
 			}
 		}
@@ -94,7 +185,8 @@ public class Wallet {
 		
 		BigInteger balance = this.balance;
 		for(UnspentTXO utxo : utxoList){
-			balance = balance.add(utxo.getValue());
+			if(! utxo.isSpent())
+				balance = balance.add(utxo.getValue());
 		}
 		return balance.doubleValue() * Math.pow(10, -8);
 	}

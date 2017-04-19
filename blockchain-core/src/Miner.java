@@ -20,10 +20,7 @@ public class Miner {
 		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
 		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
 		
-//		String keyPath = Constant.getKeyPath("public2");
-//		Receiver miner1 = new Receiver(keyPath);
-//		Transaction newTx = new Miner().createCoinbaseTx(miner1);
-		Wallet minerWallet = new Wallet("public2");
+		Wallet minerWallet = new Wallet("public2", "private2");
 		Transaction newTx = new Miner().createCoinbaseTx(minerWallet);
 		
 		bb.addTransactionIntoBlock(newTx);
@@ -31,39 +28,34 @@ public class Miner {
 			bb.setMerkleRoot(calculateMerkleRoot(bb.getTransactions()));
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
-		int nonce = calculateNonce(bb);	// create a nonce, and next step is push to chain.
+		calculateNonce(bb);	// create a nonce, and next step is push to chain.
 		
 
-		System.out.println("BlockHash = " + bb.getBlockHeaderHash());
-		System.out.println("Block Version = " + bb.getVersion());
-		System.out.println("Block PrevBlockHash = " + bb.getPrevBlockHash());
-		System.out.println("Block MerkleRoot = " + bb.getMerkleRoot());
-		System.out.println("Block Time = " + bb.getTime());
-		System.out.println("Block Difficulty = " + bb.getDifficultyTarget());
-		System.out.println("Block Nonce = " + bb.getNonce());
-		System.out.println("Block Transaction Size = " + bb.getTransactionSize());
-		Transaction tx = bb.getTransactions().get(0);
-		System.out.println("Transaction 1 Hash = " + tx.getTx_hash().toString());
-		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
-		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
+//		System.out.println("BlockHash = " + bb.getBlockHeaderHash());
+//		System.out.println("Block Version = " + bb.getVersion());
+//		System.out.println("Block PrevBlockHash = " + bb.getPrevBlockHash());
+//		System.out.println("Block MerkleRoot = " + bb.getMerkleRoot());
+//		System.out.println("Block Time = " + bb.getTime());
+//		System.out.println("Block Difficulty = " + bb.getDifficultyTarget());
+//		System.out.println("Block Nonce = " + bb.getNonce());
+//		System.out.println("Block Transaction Size = " + bb.getTransactionSize());
+//		Transaction tx = bb.getTransactions().get(0);
+//		System.out.println("Transaction 1 Hash = " + tx.getTx_hash().toString());
+//		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
+//		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
 
 		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
 		
-//		SecureRandom r = new SecureRandom();
-//		byte[] randByte = new byte[8];
-//		r.nextBytes(randByte);
-//		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-//	    buffer.put(randByte);
-//	    buffer.flip();//need flip 
-//		bb.setNonce(buffer.getLong());
-//		
-//		System.out.println(bb.getBlockHeaderHash());
+		Wallet user = new Wallet();
 		
+		user.receiveMoney( minerWallet.createGeneralTransaction(2050000000, user) );
+		System.out.println("user balance = " + user.getBalance() + "BTC");
+		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
 		
+
 //		String keyPath2 = Constant.getPubKeyPath("public3");
 //		Receiver miner2 = new Receiver(keyPath2);
 //		Transaction newTx2 = new Miner().createCoinbaseTx(miner2);
@@ -86,14 +78,7 @@ public class Miner {
 			int nonce;
 			int a = r.nextInt(2147483647);
 			nonce = byteArrayToInt( Utils.getIntByteArray(a) );
-			
-//			byte[] randByte = new byte[4];
-//			r.nextBytes(randByte);
-//			
-//			ByteBuffer buffer = ByteBuffer.allocate(4);
-//		    buffer.put(randByte);
-//		    buffer.flip();//need flip 
-//		    long nonce = buffer.getInt();
+		
 		    block.setNonce(nonce);
 		    String hash = block.getBlockHeaderHash();
 //			System.out.println("Calculating...Hash = " + hash);
@@ -118,9 +103,7 @@ public class Miner {
     	
     	TransactionOutput txOut = new TransactionOutput();
     	txOut.setValue(new BigInteger("5000000000"));
-    	
     	byte[] scriptPubKey = minerWallet.showPubKeyAddress(0).getBytes();
-//    	byte[] scriptPubKey = miner.getPublicKeyHashAddress().getBytes();
     	
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_HASH160);
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);

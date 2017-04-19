@@ -5,6 +5,7 @@ public class UnspentTXO {
 	private int indexOfTxOutput;
 	private BigInteger value;
 	private byte[] scriptPubKey;
+	private boolean isSpent = false;
 	
 	public Sha256Hash getTransactionHash() {
 		return transactionHash;
@@ -36,6 +37,14 @@ public class UnspentTXO {
 	
 	public void setScriptPubKey(byte[] scriptPubKey) {
 		this.scriptPubKey = scriptPubKey;
+	}
+
+	public boolean isSpent() {
+		return isSpent;
+	}
+
+	public void setSpent(boolean isSpent) {
+		this.isSpent = isSpent;
 	}
 	
 }

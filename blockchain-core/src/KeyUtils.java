@@ -42,7 +42,7 @@ public class KeyUtils{
 		// Generate a Key Pair
 		KeyPair pair = keyGen.generateKeyPair();
 		
-		System.out.println("Keys Before Saving");
+//		System.out.println("Keys Before Saving");
 		dumpKeyPair(pair);
 		// SaveToFile
 		String keyStorePath = System.getProperty("user.dir");
@@ -52,7 +52,7 @@ public class KeyUtils{
 		
 		//LoadFromFile
 		KeyPair pair2 = loadKeyPair(keyStorePath, "EC", pubKeyName, privateKeyName);
-		System.out.println("Keys After Saving");
+//		System.out.println("Keys After Saving");
 		dumpKeyPair(pair2);
 		
 	}
@@ -72,7 +72,7 @@ public class KeyUtils{
 		     dsa.update(txData);	// set the data to be signed.
 		     
 		     byte[] realSig = dsa.sign();	// signing the data
-		     System.out.println("Signature: " + new BigInteger(1, realSig).toString(16));
+//		     System.out.println("Signature: " + new BigInteger(1, realSig).toString(16));
 		
 		     return realSig;
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
@@ -85,12 +85,10 @@ public class KeyUtils{
 	// print out the key pairs
 	private void dumpKeyPair(KeyPair keyPair) {
 		PublicKey pub = keyPair.getPublic();
-		System.out.println("Public Key: " + getHexString(pub.getEncoded()));
+//		System.out.println("Public Key: " + getHexString(pub.getEncoded()));
  
 		PrivateKey priv = keyPair.getPrivate();
-		System.out.println("Private Key: " + getHexString(priv.getEncoded()));
-		System.out.println("test = " + new String(Hex.encode( priv.getEncoded())));
-		System.out.println("test2 = " + new BigInteger(1, priv.getEncoded()).toString(16));
+//		System.out.println("Private Key: " + getHexString(priv.getEncoded()));
 	}
 	
 	

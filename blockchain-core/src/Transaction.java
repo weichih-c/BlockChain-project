@@ -10,13 +10,11 @@ public class Transaction {
 	private int version;
 	private ArrayList<TransactionInput> tx_Inputs;
 	private ArrayList<TransactionOutput> tx_Outputs;
-	private boolean isSpent;
 	
 	public Transaction(){
 		this.version = 1;
 		this.tx_Inputs = new ArrayList<>();
 		this.tx_Outputs = new ArrayList<>();
-		this.isSpent = false;
 	}
 	
 	public Transaction(int version, BigInteger in_counter, ArrayList<TransactionInput> tx_inputs
@@ -88,14 +86,6 @@ public class Transaction {
 	public void addTxOutput(TransactionOutput tx_Output) {
 		this.tx_Outputs.add( tx_Output );
 //		this.out_counter = new BigInteger(Integer.toHexString( tx_Outputs.size() ), 16);
-	}
-	
-	public void setTxSpent(){
-		this.isSpent = true;
-	}
-	
-	public boolean checkTxSpent(){
-		return isSpent;
 	}
 	
 	public byte[] encodeTransactionInputToByte(TransactionInput txIn){

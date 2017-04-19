@@ -10,32 +10,13 @@ import java.util.List;
 
 public class Consumer {
 	private String algorithmName = "EC";
-	private String PubKeyPath;
-	private String PrivKeyPath;
+	private String pubKeyPath;
+	private String privKeyPath;
 
-	
-	public static void main(String[] args){
-
-	}
 	
 	public Consumer(String PubKeyPath, String PrivKeyPath){
-		this.PubKeyPath = PubKeyPath;
-		this.PrivKeyPath = PrivKeyPath;
-	}
-	
-	
-	public Transaction createGeneralTransaction(TransactionOutput txOfUTXO, Receiver receiver, long spentValue){
-		Transaction transaction = new Transaction();
-		// TODO: add a wallet to save UTXO, consumer will spent UTXO as TransactionInput.
-		// TODO: spent dollar => receiver[0] get spentValue, receiver[1] get change
-		
-//		TransactionInput tIn = new TransactionInput();
-//		tIn.setPrev_hash(prev_hash);
-//		transaction.addTxInput(tIn);
-		
-		byte[] scriptPubKey = receiver.getPublicKeyHashAddress().getBytes();
-		
-		return null;
+		this.pubKeyPath = PubKeyPath;
+		this.privKeyPath = PrivKeyPath;
 	}
 	
 	
@@ -50,34 +31,38 @@ public class Consumer {
 	 * make ScriptSig in every Transaction Input of the specific Transaction.
 	 * In this function, a user who wants to spend his UTXO must generate the scriptSig by the p2pKH in UTXOs and concatenate the pubKey in the end.
 	 * 
-	 * @param pubKeyPath
-	 * @param privateKeyPath
 	 * @param transaction
 	 * @param utxoList
 	 * @throws InvalidKeySpecException
 	 * @throws NoSuchAlgorithmException
 	 * @throws IOException
 	 */
-	public void makeScriptSignature(String pubKeyPath, String privateKeyPath, Transaction transaction, ArrayList<TransactionOutput> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+	public ArrayList<TransactionInput> makeScriptSignature(Transaction transaction, ArrayList<UnspentTXO> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
 		byte[] scriptSig = {};
 		
 		KeyUtils keyUtil = new KeyUtils();
-		PrivateKey privKey = keyUtil.loadPrivateKey(privateKeyPath, algorithmName);
+		PrivateKey privKey = keyUtil.loadPrivateKey(privKeyPath, algorithmName);
 		byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
 		
 		ArrayList<TransactionInput> txIns = transaction.getTxInputs();
-		
+		Transaction txCopy = transaction;	// the transaction which is hashed is a copy.
+
 		// generate the signature, concatenate the the pubKey 
-		// and reset the scriptSig field in every TxInput.
-		
+		// and reset the scriptSig field in every TxInput.		
 		for(int index=0; index < txIns.size(); index++){
-			byte[] txData = hashModifiedTransactions(transaction, index, utxoList.get(index) );
+			byte[] txData = hashModifiedTransactions(txCopy, index, utxoList.get(index) );
 			byte[] signature = keyUtil.makeSignature(privKey, txData);	// make the signature using private key
 			scriptSig = Utils.concatenateByteArrays(signature, pubKey);
+//			System.out.println("txIn ScriptSig = " + Utils.getHexString( txIns.get(index).getScriptSignature()));
+//			System.out.println("txIn scriptSigLen = " + txIns.get(index).getScriptLen());
 			
 			txIns.get(index).setScriptSignature(scriptSig);
 			txIns.get(index).setScriptLen("" + scriptSig.length);
+//			System.out.println("txIn ScriptSig = " + Utils.getHexString( txIns.get(index).getScriptSignature()));
+//			System.out.println("txIn scriptSigLen = " + txIns.get(index).getScriptLen());
 		}
+		
+		return txIns;
 	}
 	
 	/**
@@ -94,7 +79,7 @@ public class Consumer {
 	 * 
 	 * @return
 	 */
-	public byte[] hashModifiedTransactions(Transaction tx, int txInputIndex, TransactionOutput uTXO){
+	public byte[] hashModifiedTransactions(Transaction tx, int txInputIndex, UnspentTXO uTXO){
 		return HashGenerator.hashingSHA256Twice( modifyTransaction(tx, txInputIndex, uTXO) );
 
 	}
@@ -108,7 +93,7 @@ public class Consumer {
 	 * 
 	 * @return
 	 */
-	public byte[] modifyTransaction(Transaction tx, int txInputIndex, TransactionOutput uTXO){
+	public byte[] modifyTransaction(Transaction tx, int txInputIndex, UnspentTXO uTXO){
 		byte[] serializedTx;
 		byte[] version = Utils.getIntByteArray(tx.getVersion());
 		serializedTx = Arrays.copyOf(version, version.length);

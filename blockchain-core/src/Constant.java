@@ -14,5 +14,4 @@ public class Constant {
 		return keyStorePath + File.separator + keyName;
 	}
 	
-	
 }
