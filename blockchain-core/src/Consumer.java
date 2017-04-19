@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -23,7 +24,7 @@ public class Consumer {
 	}
 	
 	
-	public Transaction createGeneralTransaction(TransactionInput UTXO, Receiver receiver, long spentValue){
+	public Transaction createGeneralTransaction(TransactionOutput txOfUTXO, Receiver receiver, long spentValue){
 		Transaction transaction = new Transaction();
 		// TODO: add a wallet to save UTXO, consumer will spent UTXO as TransactionInput.
 		// TODO: spent dollar => receiver[0] get spentValue, receiver[1] get change
@@ -37,18 +38,6 @@ public class Consumer {
 		return null;
 	}
 	
-	public byte[] getScriptSignature(String pubKeyPath, String privKeyPath, Transaction transaction){
-		try {
-			byte[] signature = getSignature(privKeyPath, transaction);
-			byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
-			byte[] scriptSig = Utils.concatenateByteArrays(signature, pubKey);
-			
-			return scriptSig;
-		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
-			System.out.println("Error: " + e.getMessage());
-			return null;
-		}
-	}
 	
 	public byte[] getPublicKeyEncoded(String publicKeyPath) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException{
 		KeyGenerator keyGen = new KeyGenerator();
@@ -56,14 +45,39 @@ public class Consumer {
 		return pubKey.getEncoded();
 	}
 	
-	public byte[] getSignature(String privateKeyPath, Transaction transaction) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+	
+	/**
+	 * make ScriptSig in every Transaction Input of the specific Transaction.
+	 * In this function, a user who wants to spend his UTXO must generate the scriptSig by the p2pKH in UTXOs and concatenate the pubKey in the end.
+	 * 
+	 * @param pubKeyPath
+	 * @param privateKeyPath
+	 * @param transaction
+	 * @param utxoList
+	 * @throws InvalidKeySpecException
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+	public void makeScriptSignature(String pubKeyPath, String privateKeyPath, Transaction transaction, ArrayList<TransactionOutput> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+		byte[] scriptSig = {};
 		
 		KeyGenerator keyGen = new KeyGenerator();
 		PrivateKey privKey = keyGen.loadPrivateKey(privateKeyPath, algorithmName);
-		byte[] txData = hashModifiedTransactions(transaction);	// hashing all txs
-		byte[] signature = keyGen.makeSignature(privKey, txData);	// make the signature using private key
-
-		return signature;
+		byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
+		
+		ArrayList<TransactionInput> txIns = transaction.getTxInputs();
+		
+		// generate the signature, concatenate the the pubKey 
+		// and reset the scriptSig field in every TxInput.
+		
+		for(int index=0; index < txIns.size(); index++){
+			byte[] txData = hashModifiedTransactions(transaction, index, utxoList.get(index) );
+			byte[] signature = keyGen.makeSignature(privKey, txData);	// make the signature using private key
+			scriptSig = Utils.concatenateByteArrays(signature, pubKey);
+			
+			txIns.get(index).setScriptSignature(scriptSig);
+			txIns.get(index).setScriptLen("" + scriptSig.length);
+		}
 	}
 	
 	/**
@@ -75,10 +89,13 @@ public class Consumer {
 	 * (That is, other fields have to be filled)
 	 * 
 	 * @param tx  Transaction to be modified and hashed
+	 * @param txInputIndex which txInput ScriptSig generating
+	 * @param uTXO which UTXO is spent in this txInput
+	 * 
 	 * @return
 	 */
-	public byte[] hashModifiedTransactions(Transaction tx){
-		return HashGenerator.hashingSHA256Twice( modifyTransaction(tx) );
+	public byte[] hashModifiedTransactions(Transaction tx, int txInputIndex, TransactionOutput uTXO){
+		return HashGenerator.hashingSHA256Twice( modifyTransaction(tx, txInputIndex, uTXO) );
 
 	}
 	
@@ -86,9 +103,12 @@ public class Consumer {
 	 *  set the scriptLen and ScriptSignature fields in all transactionInput to 0 and null respectively
 	 * 
 	 * @param tx
+	 * @param txInputIndex which txInput ScriptSig generating
+	 * @param uTXO which UTXO is spent in this txInput
+	 * 
 	 * @return
 	 */
-	public byte[] modifyTransaction(Transaction tx){
+	public byte[] modifyTransaction(Transaction tx, int txInputIndex, TransactionOutput uTXO){
 		byte[] serializedTx;
 		byte[] version = Utils.getIntByteArray(tx.getVersion());
 		serializedTx = Arrays.copyOf(version, version.length);
@@ -96,10 +116,17 @@ public class Consumer {
 		serializedTx = Utils.concatenateByteArrays(serializedTx, txInputsCount);
 		
 		ArrayList<TransactionInput> txIns = tx.getTxInputs();
-		for(TransactionInput txIn : txIns){
-			txIn.setScriptLen("0");
-			txIn.setScriptSignature(null);
+		for(int a = 0; a < txIns.size(); a++){
+			if(a == txInputIndex){
+				byte[] scriptPubKeyWithoutOPs = removeOpcodesFromScriptPubKey(uTXO.getScriptPubKey());
+				txIns.get(a).setScriptSignature(scriptPubKeyWithoutOPs);
+				txIns.get(a).setScriptLen(new BigInteger("" + scriptPubKeyWithoutOPs.length, 16));
+			}else{
+				txIns.get(a).setScriptSignature(null);
+				txIns.get(a).setScriptLen("0");
+			}
 		}
+	
 		List<byte[]>byteList = tx.encodeInputListToByteArray(txIns);
 		byte[] tIns = {};
 		for(byte[] b : byteList){
@@ -118,5 +145,18 @@ public class Consumer {
 		serializedTx = Utils.concatenateByteArrays(serializedTx, tOuts);	// add tx_outs to Tx
 		
 		return serializedTx;
+	}
+	
+	/**
+	 * cut the first 2 bytes and last 2 bytes off
+	 * 
+	 * the first 2 bytes are OP_DUP, OP_Hash160
+	 * the last 2 bytes are OP_EQUALVERIFY, OP_CHECKSIG
+	 * 
+	 * @param scriptPubkey
+	 * @return
+	 */
+	public byte[] removeOpcodesFromScriptPubKey(byte[] scriptPubkey){
+		return Arrays.copyOfRange(scriptPubkey, 2, scriptPubkey.length-2);
 	}
 }

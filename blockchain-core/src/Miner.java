@@ -122,8 +122,8 @@ public class Miner {
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);
     	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_EQUALVERIFY);
     	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_CHECKSIG);
-
-    	txOut.setScriptPubKey(scriptPubKey);
+    	
+    	txOut.setScriptPubKey(scriptPubKey);	// adding the opCodes to scriptPubKey in TXOut
     	txOut.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey.length), 16));
 
     	coinbaseTx.setVersion(1);
