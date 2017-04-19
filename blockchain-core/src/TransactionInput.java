@@ -28,7 +28,7 @@ public class TransactionInput implements Serializable{
 			this.prev_txOut_index = new BigInteger(hexNumber, 16);
 		
 		}else{
-			// use the string after '0x'
+			// remove '0x'
 			this.prev_txOut_index = new BigInteger(hexNumber.split("0x")[1], 16);
 		}
 	}

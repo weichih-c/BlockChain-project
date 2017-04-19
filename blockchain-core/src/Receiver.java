@@ -42,8 +42,8 @@ public class Receiver {
 		
 		
 		// get public key from keyStore
-		KeyGenerator keyGen = new KeyGenerator();
-		PublicKey pubKey = keyGen.loadPublicKey(pubKeyPath, algorithmName);
+		KeyUtils keyUtil = new KeyUtils();
+		PublicKey pubKey = keyUtil.loadPublicKey(pubKeyPath, algorithmName);
 		
 		// generate a pubKeyHash
 		byte[] pubKeyHash = HashGenerator.hashingRIPEMD160(HashGenerator.hashingSHA256(pubKey.getEncoded()));
@@ -63,8 +63,8 @@ public class Receiver {
 	
 	private String getPublicHashKey(String pubKeyPath) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException{
 		// get public key from keyStore
-		KeyGenerator keyGen = new KeyGenerator();
-		PublicKey pubKey = keyGen.loadPublicKey(pubKeyPath, algorithmName);
+		KeyUtils keyUtil = new KeyUtils();
+		PublicKey pubKey = keyUtil.loadPublicKey(pubKeyPath, algorithmName);
 		
 		// generate a pubKeyHash
 		byte[] pubKeyHash = HashGenerator.hashingRIPEMD160(HashGenerator.hashingSHA256(pubKey.getEncoded()));

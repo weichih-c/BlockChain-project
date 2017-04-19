@@ -20,9 +20,11 @@ public class Miner {
 		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
 		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
 		
-		String keyPath = Constant.getKeyPath("public2");
-		Receiver miner1 = new Receiver(keyPath);
-		Transaction newTx = new Miner().createCoinbaseTx(miner1);
+//		String keyPath = Constant.getKeyPath("public2");
+//		Receiver miner1 = new Receiver(keyPath);
+//		Transaction newTx = new Miner().createCoinbaseTx(miner1);
+		Wallet minerWallet = new Wallet("public2");
+		Transaction newTx = new Miner().createCoinbaseTx(minerWallet);
 		
 		bb.addTransactionIntoBlock(newTx);
 		try {
@@ -49,6 +51,7 @@ public class Miner {
 		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
 		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
 
+		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
 		
 //		SecureRandom r = new SecureRandom();
 //		byte[] randByte = new byte[8];
@@ -93,7 +96,7 @@ public class Miner {
 //		    long nonce = buffer.getInt();
 		    block.setNonce(nonce);
 		    String hash = block.getBlockHeaderHash();
-			System.out.println("Calculating...Hash = " + hash);
+//			System.out.println("Calculating...Hash = " + hash);
 
 			if(hash.startsWith("000")){
 				return nonce;
@@ -101,7 +104,7 @@ public class Miner {
 		}
 	}
 	
-	private  Transaction createCoinbaseTx (Receiver miner) {
+	private  Transaction createCoinbaseTx (Wallet minerWallet) {
 		Transaction coinbaseTx = new Transaction();
     	TransactionInput txIn = new TransactionInput();
     	txIn.setPrev_hash("0000000000000000000000000000000000000000000000000000000000000000");
@@ -114,9 +117,10 @@ public class Miner {
     	txIn.setScriptLen(new BigInteger(Integer.toHexString(coinbaseScript.length), 16));
     	
     	TransactionOutput txOut = new TransactionOutput();
-    	txOut.setValue(5000000000L);
+    	txOut.setValue(new BigInteger("5000000000"));
     	
-    	byte[] scriptPubKey = miner.getPublicKeyHashAddress().getBytes();
+    	byte[] scriptPubKey = minerWallet.showPubKeyAddress(0).getBytes();
+//    	byte[] scriptPubKey = miner.getPublicKeyHashAddress().getBytes();
     	
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_HASH160);
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);
@@ -129,6 +133,8 @@ public class Miner {
     	coinbaseTx.setVersion(1);
     	coinbaseTx.addTxInput(txIn);
     	coinbaseTx.addTxOutput(txOut);
+    	
+    	minerWallet.receiveMoney(coinbaseTx);
     	
 		return coinbaseTx;
 	}

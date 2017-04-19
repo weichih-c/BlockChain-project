@@ -40,8 +40,8 @@ public class Consumer {
 	
 	
 	public byte[] getPublicKeyEncoded(String publicKeyPath) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException{
-		KeyGenerator keyGen = new KeyGenerator();
-		PublicKey pubKey = keyGen.loadPublicKey(publicKeyPath, algorithmName);
+		KeyUtils keyUtil = new KeyUtils();
+		PublicKey pubKey = keyUtil.loadPublicKey(publicKeyPath, algorithmName);
 		return pubKey.getEncoded();
 	}
 	
@@ -61,8 +61,8 @@ public class Consumer {
 	public void makeScriptSignature(String pubKeyPath, String privateKeyPath, Transaction transaction, ArrayList<TransactionOutput> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
 		byte[] scriptSig = {};
 		
-		KeyGenerator keyGen = new KeyGenerator();
-		PrivateKey privKey = keyGen.loadPrivateKey(privateKeyPath, algorithmName);
+		KeyUtils keyUtil = new KeyUtils();
+		PrivateKey privKey = keyUtil.loadPrivateKey(privateKeyPath, algorithmName);
 		byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
 		
 		ArrayList<TransactionInput> txIns = transaction.getTxInputs();
@@ -72,7 +72,7 @@ public class Consumer {
 		
 		for(int index=0; index < txIns.size(); index++){
 			byte[] txData = hashModifiedTransactions(transaction, index, utxoList.get(index) );
-			byte[] signature = keyGen.makeSignature(privKey, txData);	// make the signature using private key
+			byte[] signature = keyUtil.makeSignature(privKey, txData);	// make the signature using private key
 			scriptSig = Utils.concatenateByteArrays(signature, pubKey);
 			
 			txIns.get(index).setScriptSignature(scriptSig);

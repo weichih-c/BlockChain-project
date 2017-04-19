@@ -2,13 +2,14 @@ import java.io.Serializable;
 import java.math.BigInteger;
 
 public class TransactionOutput implements Serializable{
-	private long value;
+	private BigInteger value;
 	private BigInteger scriptLen;
 	private byte[] scriptPubKey;
-	public long getValue() {
+	
+	public BigInteger getValue() {
 		return value;
 	}
-	public void setValue(long value) {
+	public void setValue(BigInteger value) {
 		this.value = value;
 	}
 	public BigInteger getScriptLen() {

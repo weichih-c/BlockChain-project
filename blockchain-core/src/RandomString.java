@@ -17,6 +17,10 @@ public class RandomString {
 
   private final char[] buf;
 
+  /**
+   * Generate a specific length random string
+   * @param length
+   */
   public RandomString(int length) {
     if (length < 1)
       throw new IllegalArgumentException("length < 1: " + length);
@@ -27,5 +31,14 @@ public class RandomString {
     for (int idx = 0; idx < buf.length; ++idx) 
       buf[idx] = symbols[random.nextInt(symbols.length)];
     return new String(buf);
+  }
+  
+ 
+  public String[] generateKeyPairName(){
+	String name = nextString();
+	String pubKeyName = name + "_public.key";
+	String privKeyName = name + "_private.key";
+	String [] keyPairName = {pubKeyName, privKeyName};
+	return keyPairName;
   }
 }

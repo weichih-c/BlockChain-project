@@ -52,9 +52,9 @@ public class Transaction {
 		return new Sha256Hash( txHash );
 	}
 
-	private void setTx_hash(Sha256Hash tx_hash) {
-		this.tx_hash = tx_hash;
-	}
+//	private void setTx_hash(Sha256Hash tx_hash) {
+//		this.tx_hash = tx_hash;
+//	}
 
 	public int getVersion() {
 		return version;

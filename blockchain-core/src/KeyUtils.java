@@ -21,7 +21,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.util.encoders.Hex;
 
-public class KeyGenerator{
+public class KeyUtils{
 	
 //	public static void main(String[] args) throws InvalidKeySpecException, IOException{
 //		KeyGenerator kg = new KeyGenerator();
@@ -55,9 +55,6 @@ public class KeyGenerator{
 		System.out.println("Keys After Saving");
 		dumpKeyPair(pair2);
 		
-		
-
-
 	}
 	
 	

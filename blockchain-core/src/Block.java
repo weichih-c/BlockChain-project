@@ -123,7 +123,7 @@ public class Block {
     	txIn.setScriptLen(new BigInteger(Integer.toHexString(coinbaseScript.length), 16));
     	
     	TransactionOutput txOut = new TransactionOutput();
-    	txOut.setValue(5000000000L);
+    	txOut.setValue(new BigInteger("5000000000"));
     	String keyStorePath = Constant.getKeyPath("public.key");
     	Receiver chainCreator = new Receiver(keyStorePath);
     	byte[] scriptPubKey = chainCreator.getPublicKeyHashAddress().getBytes();
