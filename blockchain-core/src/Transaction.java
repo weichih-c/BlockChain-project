@@ -10,6 +10,7 @@ public class Transaction {
 	private int version;
 	private ArrayList<TransactionInput> tx_Inputs;
 	private ArrayList<TransactionOutput> tx_Outputs;
+	private boolean anyChange = false;
 	
 	public Transaction(){
 		this.version = 1;
@@ -163,6 +164,14 @@ public class Transaction {
 	 */
 	private byte[] reverseEndian (byte[]b){
 		return Utils.reverseBytes(b);
+	}
+
+	public boolean isAnyChange() {
+		return anyChange;
+	}
+
+	public void setAnyChange(boolean anyChange) {
+		this.anyChange = anyChange;
 	}
 	
 }

@@ -50,10 +50,18 @@ public class Miner {
 		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
 		
 		Wallet user = new Wallet();
+		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user);
+		user.receiveMoney( expense );
+		if(expense.isAnyChange()){
+			minerWallet.receiveMoney(expense);
+		}
 		
-		user.receiveMoney( minerWallet.createGeneralTransaction(2050000000, user) );
 		System.out.println("user balance = " + user.getBalance() + "BTC");
 		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
+		
+		minerWallet.clearWalletSpentTXO();
+		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
+
 		
 
 //		String keyPath2 = Constant.getPubKeyPath("public3");

@@ -72,14 +72,14 @@ public class Wallet {
 		TransactionOutput txOut = transaction.getTxOutputs().get(index);
 		utxo.setIndexOfTxOutput(index);
 		utxo.setValue(txOut.getValue());
-		System.out.println("User - " + walletName + " received " + txOut.getValue());
+		System.out.println(walletName + " received " + txOut.getValue());
 		utxo.setScriptPubKey(txOut.getScriptPubKey());
 		
 		utxoList.add(utxo);
 	}
 	
 	
-	public Transaction createGeneralTransaction(int value, Wallet recevierWallet){
+	public Transaction createGeneralTransaction(int value, Wallet consumerWallet, Wallet recevierWallet){
 //		public Transaction createGeneralTransaction(ArrayList<UnspentTXO> utxoList, double value, Wallet recevierWallet){
 		BigInteger spentValue = new BigInteger(Integer.toString(value));
 		BigInteger payUTXOAmount = new BigInteger("0");
@@ -88,9 +88,11 @@ public class Wallet {
 		for(UnspentTXO utxo : utxoList){
 			// if pay < spentValue
 			if(payUTXOAmount.compareTo(spentValue) < 0){
-				payUTXOAmount.add(utxo.getValue());
+				payUTXOAmount = payUTXOAmount.add(utxo.getValue());
 				readyToSpentTXO.add(utxo);
-				utxo.setSpent(true);
+				utxo.setSpent(true); // remove the spent TXO from wallet
+//				utxoList.remove(utxo);
+				
 			}
 		}
 		
@@ -112,13 +114,18 @@ public class Wallet {
     	txOut.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey.length), 16));
     	tx.addTxOutput(txOut);
     	
+    	System.out.println("pay money = " + payUTXOAmount.toString(10));
+    	System.out.println("SpentMoney = " + spentValue.toString(10));
+    	
     	// there are changes after paying
     	if(payUTXOAmount.compareTo(spentValue) > 0){
     		TransactionOutput txOut_Change = new TransactionOutput();
-    		txOut_Change.setValue(payUTXOAmount.subtract(spentValue));
+    		BigInteger bi = payUTXOAmount.subtract(spentValue);
+    		System.out.println("Change = " +bi.toString(10));
+    		txOut_Change.setValue(bi);
     		
     		// use the first key address.(Simple implementation)
-    		byte[] scriptPubKey_change = recevierWallet.showPubKeyAddress(0).getBytes();
+    		byte[] scriptPubKey_change = consumerWallet.showPubKeyAddress(0).getBytes();
 
     		scriptPubKey_change = Utils.prependByte(scriptPubKey_change, OpCode.OP_HASH160);
     		scriptPubKey_change = Utils.prependByte(scriptPubKey_change, OpCode.OP_DUP);
@@ -128,6 +135,7 @@ public class Wallet {
     		txOut_Change.setScriptPubKey(scriptPubKey_change);	// adding the opCodes to scriptPubKey in TXOut
     		txOut_Change.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey_change.length), 16));
     		tx.addTxOutput(txOut_Change);
+    		tx.setAnyChange(true);
     	}
     	
 		for(int a=0; a < readyToSpentTXO.size(); a++){
@@ -162,12 +170,13 @@ public class Wallet {
 			TransactionOutput txOut = txOutList.get(i);
 			String keyInTxOut = keyRemoveOpcodes(txOut.getScriptPubKey());	// removing opcodes in scriptPubKey
 			
-			/* this is because original keyInUse is in Base58 encoding,
+			/* For compare purpose:
+			 * this is because original keyInUse is in Base58 encoding,
 			 * so has be re encoding in hex format
 			 * 
 			 * it is a bad implementation, but just a workaround.
 			 */
-			keyInUse = Utils.getHexString(keyInUse.getBytes());	
+			String keyInUse = Utils.getHexString(this.keyInUse.getBytes());	
 			
 			// compare which key in OutputList belongs to this wallet
 			if(keyInUse.equals(keyInTxOut)){
@@ -185,10 +194,23 @@ public class Wallet {
 		
 		BigInteger balance = this.balance;
 		for(UnspentTXO utxo : utxoList){
-			if(! utxo.isSpent())
+//			System.out.println(i + "- value = " + utxo.getValue());
+//			System.out.println(i + "- isSpent? = " + utxo.isSpent());
+
+			if(! utxo.isSpent()){
 				balance = balance.add(utxo.getValue());
+			}
 		}
+		System.out.println("utxoList records = " + utxoList.size());
+		
 		return balance.doubleValue() * Math.pow(10, -8);
+	}
+	
+	public void clearWalletSpentTXO(){
+		for(UnspentTXO utxo : utxoList){
+			if(utxo.isSpent())
+				utxoList.remove(utxo);
+		}
 	}
 	
 	// remove the first 2 bytes and last 2 bytes, and encoding into HexString
