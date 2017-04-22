@@ -13,3 +13,6 @@ hs_err_pid*
 blockchain-core/keystore
 *.key
 NetworkServer/node_modules
+server-key.pem
+server-crt.pem
+server.crt

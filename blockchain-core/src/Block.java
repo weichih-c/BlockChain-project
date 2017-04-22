@@ -1,10 +1,5 @@
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.*;
-
-import org.spongycastle.util.encoders.Hex;
-
-import com.google.common.primitives.Longs;
 
 public class Block {
 	

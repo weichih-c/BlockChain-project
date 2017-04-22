@@ -1,10 +1,6 @@
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Random;
-
-import org.spongycastle.util.encoders.Hex;
 
 public class Miner {
 	public static void main(String[] args){

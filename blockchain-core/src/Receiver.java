@@ -4,7 +4,6 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
-
 public class Receiver {
 	private String publicKeyHashAddress;
 	private String algorithmName = "EC";

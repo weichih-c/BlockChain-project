@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/guava-21.0.jar"/>
 	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/core-1.54.0.0.jar"/>
 	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/commons-lang3-3.5.jar"/>
+	<classpathentry kind="lib" path="/Users/ciou/Git/BlockChain-project/blockchain-core/socket-io.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
