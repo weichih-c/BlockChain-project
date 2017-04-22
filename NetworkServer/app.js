@@ -1,4 +1,5 @@
 var https = require('https')
+// var http = require('http')
 ,	path = require('path')
 ,	fs = require('fs')
 ,	express = require('express')
@@ -41,9 +42,8 @@ var options = {
 // routing
 require('./app/routes.js')(app, clientList);
 
-console.log("test");
-
 var server = https.createServer(options, app);
+// var server = http.createServer(app);
 server.listen(serverPort, function() {
   console.log('server up and running at %s port', serverPort);
 });
