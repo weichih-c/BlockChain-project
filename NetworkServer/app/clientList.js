@@ -15,16 +15,16 @@ module.exports = function() {
   /**
    * Stream object
    */
-  var Client = function(id, name, eventID, deviceID) {
+  var Client = function(id, name, pubKeyHashAddress, isOnline) {
 	this.name = name;
 	this.id = id;
-	this.eventID = eventID;
-	this.deviceID = deviceID;
+	this.pubKeyHashAddress = pubKeyHashAddress;
+	this.isOnline = isOnline;
   }
 
   return {
-	addClient : function(id, name, eventID, deviceID) {
-	  var client = new Client(id, name, eventID, deviceID);
+	addClient : function(id, name, pubKeyHashAddress) {
+	  var client = new Client(id, name, pubKeyHashAddress, true);
 	  clientList.push(client);
 	},
 
@@ -36,31 +36,16 @@ module.exports = function() {
 	  }
 	},
 
-	// update function
-	update : function(deviceID, eventID) {
+	// update the isOnline status of a specific name client
+	update : function(name, isOnline) {
 	  var client = clientList.find(function(element, i, array) {
-		return element.deviceID == deviceID;
+		return element.name == name;
 	  });
-	  client.eventID = eventID;
+	  client.isOnline = isOnline;
 	},
 
 	getClients : function() {
 	  return clientList;
-	},
-
-	getClientByDeviceID : function(deviceID) {
-		var client = clientList.find(function(element, i, array) {
-			return (element.deviceID == deviceID && element.eventID == null);
-		});
-
-		return client;
-	},
-
-	getClientByEventID : function(eventID, deviceID) {
-		var client = clientList.find(function(element, i, array) {
-			return (element.deviceID == deviceID && element.eventID == eventID);
-		});
-		return client;
 	},
 
 	getClientByName : function(name) {
