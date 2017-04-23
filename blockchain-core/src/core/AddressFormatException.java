@@ -1,3 +1,4 @@
+package core;
 @SuppressWarnings("serial")
 public class AddressFormatException extends IllegalArgumentException {
     public AddressFormatException() {

@@ -1,3 +1,4 @@
+package core;
 import java.math.BigInteger;
 
 public class UnspentTXO {

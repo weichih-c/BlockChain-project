@@ -1,3 +1,4 @@
+package core;
 
 public class OpCode {
 	public static final byte OP_DUP = (byte) 0x76;
