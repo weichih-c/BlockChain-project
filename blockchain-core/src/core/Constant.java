@@ -13,10 +13,12 @@ public class Constant {
 	public static final String SOCKETIO_NAME = "name"; // socketIO Name
 	public static final String TOPIC_ID = "id";	// socketIO topic id
 	public static final String TOPIC_CONNECTMESSAGE = "connectMessage"; // socketIO topic connectMessage;
+	public static final String PEER_LIST = "peerList"; // socketIO string - peerList
 	
 	public static int TYPE_CONNECTION = 0x01;
 	public static int TYPE_EVENT = 0x02;
 	public static int EVENT_ASK_PEER = 0x101;
+	public static int EVENT_PROVIDE_INIT_PEER = 0x102;
 	
 	public static String getKeyPath(String keyName){
 		String keyStorePath = System.getProperty("user.dir");

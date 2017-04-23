@@ -15,37 +15,50 @@ module.exports = function() {
   /**
    * Stream object
    */
-  var Client = function(id, name, pubKeyHashAddress, isOnline) {
+  var Client = function(id, name, pubKeyHashAddress, isActive) {
 	this.name = name;
 	this.id = id;
 	this.pubKeyHashAddress = pubKeyHashAddress;
-	this.isOnline = isOnline;
+	this.isActive = isActive;
   }
 
   return {
 	addClient : function(id, name, pubKeyHashAddress) {
-	  var client = new Client(id, name, pubKeyHashAddress, true);
-	  clientList.push(client);
+		var client = new Client(id, name, pubKeyHashAddress, true);
+			clientList.push(client);
 	},
 
 	removeClient : function(id) {
-	  for(var i = (clientList.length - 1); i >= 0; i--)
-	  {
-		if(clientList[i].id == id)
-			clientList.splice(i, 1);
-	  }
+		for(var i = (clientList.length - 1); i >= 0; i--)
+		{
+			if(clientList[i].id == id)
+				clientList.splice(i, 1);
+		}
 	},
 
-	// update the isOnline status of a specific name client
-	update : function(name, isOnline) {
-	  var client = clientList.find(function(element, i, array) {
-		return element.name == name;
-	  });
-	  client.isOnline = isOnline;
+	// update the isActive status of a specific name client
+	update : function(id, isActive) {
+		var client = clientList.find(function(element, i, array) {
+			return element.id == id;
+		});
+	 
+		client.isActive = isActive;
+	},
+
+	updateClientReconnect : function(client, id, status) {
+		client.id = id;
+		client.isActive = status;
 	},
 
 	getClients : function() {
-	  return clientList;
+		return clientList;
+	},
+
+	getClientByID : function(id) {
+		var client = clientList.find(function(element, i, array) {
+			return (element.id == id);
+		});
+		return client;
 	},
 
 	getClientByName : function(name) {

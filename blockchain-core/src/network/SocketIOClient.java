@@ -130,6 +130,40 @@ public class SocketIOClient {
     	System.out.println("emit ask peer event");
     }
     
+    public boolean isConnected(){
+    	return socket.connected();
+    }
+    
+    
+    /**
+     * disconnect the network.
+     */
+    public void leaveNetwork() {
+    	System.out.println(clientName + " is leaving network.");
+
+    	if(socket != null){
+    		if(socket.connected()){
+        		socket.close();
+    		}
+//    		socket = null;
+    	}
+    }
+    
+    public void reconnectNetwork() {
+    	System.out.println(clientName + " is reconnecting");
+    	
+    	// close the previous connection
+    	if(socket != null){
+    		if(socket.connected()){
+        		socket.close();
+    		}
+    	}
+    	
+		socket.connect();
+			
+
+    }
+    
     /**
      * inner class MessageHandler
      * 用來處理收到的訊息
@@ -160,7 +194,12 @@ public class SocketIOClient {
             	if(type.equals("connected_success")){
                 	System.out.println("connect to Server Success");
                 	
-                	askPeersForInit();
+                	if(peerList.isEmpty())
+                		// TODO: 現在只存在在記憶體，所以程式關掉重開理論上仍然會重新要一次（因為程式開起來peerList是空的）
+                		askPeersForInit();
+                	else{
+                		// TODO: check peer in peerList isAlive or not
+                	}
             	}
             	
             }
@@ -174,22 +213,40 @@ public class SocketIOClient {
             @Override
             public void call(Object... args) {
             	System.out.println("Get server Message");
-            	JSONArray data =  (JSONArray) args[0];
-//            	System.out.println(data.getJSONObject(0));
-//            	System.out.println(data.getJSONObject(0).get("name"));
+            	JSONObject data = (JSONObject) args[0];
+            	try{
+            		int type = data.getInt(Constant.TYPE);
+                	if(type == Constant.EVENT_PROVIDE_INIT_PEER){
+                		JSONArray otherPeers = data.getJSONArray(Constant.PEER_LIST);
+                		for(int i=0; i<otherPeers.length(); i++){
+                			if(otherPeers.isNull(i)){	// workaround solution
+                				continue;
+                			}
+                    		JSONObject peer = otherPeers.getJSONObject(i);
+                    		String peerName = peer.getString(Constant.SOCKETIO_NAME);
+                    		String peerID = peer.getString(Constant.TOPIC_ID);
+                    		// if not client itself, then add to peerList.
+                    		if( !clientName.equals( peerName ) ){
+                    			NetworkPeer np = new NetworkPeer(peerName, peerID, null, true);
+                    			peerList.add(np);
 
-            	for(int i=0; i<data.length(); i++){
-            		JSONObject otherPeer = data.getJSONObject(i);
-            		String peerName = otherPeer.getString(Constant.SOCKETIO_NAME);
-            		String peerID = otherPeer.getString(Constant.TOPIC_ID);
-            		
-            		// if not client self, then add to peerList.
-            		if( !clientName.equals( peerName ) ){
-            			NetworkPeer np = new NetworkPeer(peerName, peerID, null, true);
-            			peerList.add(np);
-            		}
-            		
+                    		}
+                    	}
+                		
+                		System.out.println(clientName + " has peer list : ");
+                		for(NetworkPeer peer : peerList){
+                			System.out.print(peer.getName() + ',');
+                		}
+                		System.out.println();
+                		
+                	}else{
+                		System.out.println("Receiving other event type.");
+                	}
+            	}catch(JSONException e){
+            		e.printStackTrace();
             	}
+            	
+            	
             }
         };
     }
