@@ -1,49 +1,89 @@
 package network;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Node implements Runnable{
+import org.json.JSONObject;
+
+import core.Constant;
+import network.SocketIOClient.ConnectionListener;
+
+public class Node implements Runnable, ConnectionListener{
 	private SocketIOClient mClient = null;
+	private ArrayList<NetworkPeer> peerList;
 	
 	public Node(String name){
-		this.mClient = new SocketIOClient(name);	// will create the initial link when initialize object
+//		System.out.println("constructor");
+		this.mClient = new SocketIOClient(Node.this, name);	// will create the initial link when initialize object
 	}
 
 	@Override
 	public void run() {
-		System.out.println("run the runnable");
+//		System.out.println("run the runnable");
 		Timer timer = new Timer();
 		Random rand = new Random();
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
+//		try {
+			
+//			wait(2000);
+//			Thread.sleep(2000);
+//		} catch (InterruptedException e1) {
+//			e1.printStackTrace();
+//		}
+//		this.notify();
+		this.peerList = mClient.getPeerList();
 		
-		while(true){
-//			System.out.println("Start loop");
-			
-			timer.schedule(new TimerTask(){
 
-				@Override
-				public void run() {
-					if(mClient.isConnected())
-						mClient.leaveNetwork();
-					else
-						mClient.reconnectNetwork();
-				}
-				
-			}, 1000 * ( rand.nextInt(10) + 1 ));	// random delayTime in 1000-10000 millisecond
-			
-			
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		
+//		while(true){
+//			
+//			timer.schedule(new TimerTask(){
+//
+//				@Override
+//				public void run() {
+//					if(mClient.isConnected())
+//						mClient.leaveNetwork();
+//					else
+//						mClient.reconnectNetwork();
+//				}
+//				
+//			}, 1000 * ( rand.nextInt(10) + 1 ));	// random delayTime in 1000-10000 millisecond
+//			
+//			
+//			try {
+//				Thread.sleep(2000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+		
+		
+	}
+	
+	public void connectOthers(){
+		System.out.println(peerList.size());
+		if(peerList.size() > 0){
+			NetworkPeer peer = peerList.get(0);
+			JSONObject payload = new JSONObject();
+			payload.put(Constant.CLIENT_MESSAGE_TO, peer.getSocketIO_ID());
+			payload.put(Constant.EVENT, Constant.EVENT_CHECK_ACTIVE);
+			payload.put(Constant.SOCKETIO_NAME, mClient.getClientName());	// tell remote who am I
+			mClient.sendClientMessage(payload);
 		}
+	}
+
+	@Override
+	public void onConnectionReady() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onInitialReady() {
+		// TODO Auto-generated method stub
+		System.out.println("Node onInitialReady");
+		connectOthers();
 	}
 
 }

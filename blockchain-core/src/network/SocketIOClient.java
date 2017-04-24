@@ -32,7 +32,13 @@ public class SocketIOClient {
 	private Socket socket;
 	private String clientName;
 	private ArrayList<NetworkPeer> peerList;
+	private ConnectionListener mListener;
+	private final int MAX_PEERLIST_SIZE = 3;
 	
+	public interface ConnectionListener {
+		void onConnectionReady();
+		void onInitialReady();
+	}
 	
 	/**
      * 設定信任所有憑證(用於SSL加密)
@@ -63,7 +69,8 @@ public class SocketIOClient {
         }
     }
     
-    public SocketIOClient(String clientName){
+    public SocketIOClient(ConnectionListener listener, String clientName){
+    	this.mListener = listener;
     	this.clientName = clientName;
     	peerList = new ArrayList<>();
     	
@@ -84,6 +91,7 @@ public class SocketIOClient {
 			socket.on(Constant.TOPIC_ID, m.onID);
 			socket.on(Constant.TOPIC_CONNECTMESSAGE, m.onConnectListener);
 			socket.on(Constant.SERVER_MESSAGE, m.onServerMessage);
+			socket.on(Constant.CLIENT_MESSAGE, m.onClientMessage);
 			socket.connect();
 			
 			
@@ -104,6 +112,13 @@ public class SocketIOClient {
         message.put(Constant.PAYLOAD, payload);
         System.out.println("Message content in payload = " + message);
         socket.emit(Constant.SERVER_MESSAGE, message);
+    }
+    
+    public void sendClientMessage(JSONObject payload) throws JSONException{
+    	JSONObject message = new JSONObject();
+    	message.put(Constant.PAYLOAD, payload);
+    	System.out.println("Message content in payload = " + message);
+    	socket.emit(Constant.CLIENT_MESSAGE, message);
     }
     
     /**
@@ -128,6 +143,15 @@ public class SocketIOClient {
     	message.put(Constant.EVENT, Constant.EVENT_ASK_PEER);
     	sendServerMessage(message);
     	System.out.println("emit ask peer event");
+    }
+    
+    private JSONObject setClientMessage(int eventCode, String remoteID, String localName){
+    	JSONObject message = new JSONObject();
+        message.put(Constant.SYSTEM_CODE, Constant.TYPE_EVENT);
+        message.put(Constant.EVENT, eventCode);
+        message.put(Constant.CLIENT_MESSAGE_TO, remoteID);
+        message.put(Constant.SOCKETIO_NAME, localName);
+        return message;
     }
     
     public boolean isConnected(){
@@ -192,7 +216,7 @@ public class SocketIOClient {
             	
             	String type = data.getString(Constant.TYPE);
             	if(type.equals("connected_success")){
-                	System.out.println("connect to Server Success");
+//                	System.out.println("connect to Server Success");
                 	
                 	if(peerList.isEmpty())
                 		// TODO: 現在只存在在記憶體，所以程式關掉重開理論上仍然會重新要一次（因為程式開起來peerList是空的）
@@ -202,6 +226,8 @@ public class SocketIOClient {
                 	}
             	}
             	
+            	
+            	mListener.onConnectionReady();
             }
         };
 
@@ -212,7 +238,7 @@ public class SocketIOClient {
         private Emitter.Listener onServerMessage = new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-            	System.out.println("Get server Message");
+//            	System.out.println("Get server Message");
             	JSONObject data = (JSONObject) args[0];
             	try{
             		int type = data.getInt(Constant.TYPE);
@@ -233,7 +259,7 @@ public class SocketIOClient {
                     		}
                     	}
                 		
-                		System.out.println(clientName + " has peer list : ");
+                		System.out.print(clientName + " has peer list : ");
                 		for(NetworkPeer peer : peerList){
                 			System.out.print(peer.getName() + ',');
                 		}
@@ -246,10 +272,83 @@ public class SocketIOClient {
             		e.printStackTrace();
             	}
             	
+            	mListener.onInitialReady();
             	
             }
         };
+        
+        
+        private Emitter.Listener onClientMessage = new Emitter.Listener() {
+			
+			@Override
+			public void call(Object... args) {
+				System.out.println("Get client Message");
+            	JSONObject data = (JSONObject) args[0];
+            	String from = data.getString(Constant.CLIENT_MESSAGE_FROM);	// get remote SocketID
+            	JSONObject payload = data.getJSONObject(Constant.PAYLOAD);
+//            	System.out.println("Client data = " + data);
+            	int event = payload.getInt(Constant.EVENT);
+            	
+            	switch (event) {
+            		case Constant.EVENT_CHECK_ACTIVE:{
+            		
+            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
+                    	System.out.println(clientName + " get Message : 'check active' from : " + remoteName);
+        				
+                    	checkNewPeer(from, remoteName); // Checking new peer or not. If new, then add.
+                    	sendClientMessage( setClientMessage(Constant.EVENT_CHECK_ACTIVE_RESPONSE, from, clientName) );
+                    	
+                    	break;
+            		}
+            		case Constant.EVENT_CHECK_ACTIVE_RESPONSE:{
+            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
+            			System.out.println(clientName + " get Message : 'response active' from : " + remoteName);
+            			
+            			break;
+            		}
+            			
+            	}
+            	
+            	
+            	
+            	
+			}
+		};
+    }
+    
+    private void checkNewPeer(String from, String remoteName){
+    	if(peerList.size() <= MAX_PEERLIST_SIZE){
+    		
+    		boolean isNewPeer = true;
+        	for(NetworkPeer peer: peerList){
+        		
+        		// peer information is newest
+        		if(peer.getSocketIO_ID().equals(from)){
+        			isNewPeer = false;
+        			break;
+        		}
+        		
+        		// update peer socketID
+        		if(peer.getName().equals(remoteName)){
+        			peer.setSocketIO_ID(from);
+        			isNewPeer = false;
+        			break;
+        		}
+        	}
+        	
+        	if(isNewPeer){
+        		NetworkPeer newPeer = new NetworkPeer(remoteName, from, null, true); // an online peer
+        		peerList.add(newPeer);
+        	}
+    		
+    	}
     }
 	
+	public ArrayList<NetworkPeer> getPeerList(){
+		return peerList;
+	}
 	
+	public String getClientName(){
+		return clientName;
+	}
 }

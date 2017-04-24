@@ -19,16 +19,19 @@ module.exports = function(io, request, clientList) {
 		// console.log('[INFO] ' + client.id + ' connected');
 		client.emit('id', client.id);
 
-		// client.on('message', function (details) {
-		// 	var otherClient = io.sockets.connected[details.to];	// 把otherClient設為訊息的收件人
+		client.on('clientMessage', function (details) {
+			console.log("relay client message");
+			// console.log(details);
+			var otherClient = io.sockets.connected[details.payload.to];	// 把otherClient設為訊息的收件人
+			// console.log(otherClient);
 
-		// 	if (!otherClient){
-		// 		return;
-		// 	}
-		// 	delete details.to;
-		// 	details.from = client.id;	// 發送來源設為發出的client id
-		// 	otherClient.emit('message', details);	// 對收件人emit訊息
-		// });
+			if (!otherClient){
+				return;
+			}
+			delete details.to;
+			details.from = client.id;	// 發送來源設為發出的client id
+			otherClient.emit('clientMessage', details);	// 對收件人emit訊息
+		});
 
 
 		function leave() {
