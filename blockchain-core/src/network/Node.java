@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import core.Constant;
@@ -31,7 +32,6 @@ public class Node implements Runnable, ConnectionListener{
 //		} catch (InterruptedException e1) {
 //			e1.printStackTrace();
 //		}
-//		this.notify();
 		this.peerList = mClient.getPeerList();
 		
 
@@ -61,7 +61,7 @@ public class Node implements Runnable, ConnectionListener{
 		
 	}
 	
-	public void connectOthers(){
+	public void connectOthers() throws JSONException{
 		System.out.println(peerList.size());
 		if(peerList.size() > 0){
 			NetworkPeer peer = peerList.get(0);
@@ -75,15 +75,18 @@ public class Node implements Runnable, ConnectionListener{
 
 	@Override
 	public void onConnectionReady() {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void onInitialReady() {
-		// TODO Auto-generated method stub
 		System.out.println("Node onInitialReady");
-		connectOthers();
+		
+		try {
+			connectOthers();
+		} catch (JSONException e) {
+			System.out.println("Error: " + e);
+		}
 	}
 
 }

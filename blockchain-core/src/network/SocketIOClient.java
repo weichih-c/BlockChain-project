@@ -137,7 +137,7 @@ public class SocketIOClient {
         }
     }
     
-    private void askPeersForInit(){
+    private void askPeersForInit() throws JSONException{
     	JSONObject message = new JSONObject();
     	message.put(Constant.SYSTEM_CODE, Constant.TYPE_EVENT);
     	message.put(Constant.EVENT, Constant.EVENT_ASK_PEER);
@@ -145,7 +145,7 @@ public class SocketIOClient {
     	System.out.println("emit ask peer event");
     }
     
-    private JSONObject setClientMessage(int eventCode, String remoteID, String localName){
+    private JSONObject setClientMessage(int eventCode, String remoteID, String localName) throws JSONException{
     	JSONObject message = new JSONObject();
         message.put(Constant.SYSTEM_CODE, Constant.TYPE_EVENT);
         message.put(Constant.EVENT, eventCode);
@@ -214,19 +214,26 @@ public class SocketIOClient {
             public void call(Object... args) {
             	JSONObject data = (JSONObject) args[0];
             	
-            	String type = data.getString(Constant.TYPE);
-            	if(type.equals("connected_success")){
-//                	System.out.println("connect to Server Success");
-                	
-                	if(peerList.isEmpty())
-                		// TODO: 現在只存在在記憶體，所以程式關掉重開理論上仍然會重新要一次（因為程式開起來peerList是空的）
-                		askPeersForInit();
-                	else{
-                		// TODO: check peer in peerList isAlive or not
-                	}
-            	}
+				try {
             	
+            	String type;
+
+					type = data.getString(Constant.TYPE);
+				
+	            	if(type.equals("connected_success")){
+	//                	System.out.println("connect to Server Success");
+	                	
+	                	if(peerList.isEmpty())
+	                		// TODO: 現在只存在在記憶體，所以程式關掉重開理論上仍然會重新要一次（因為程式開起來peerList是空的）
+	                		askPeersForInit();
+	                	else{
+	                		// TODO: check peer in peerList isAlive or not
+	                	}
+	            	}
             	
+				} catch (JSONException e) {
+					System.out.println("Error" + e);
+				}
             	mListener.onConnectionReady();
             }
         };
@@ -283,31 +290,38 @@ public class SocketIOClient {
 			@Override
 			public void call(Object... args) {
 				System.out.println("Get client Message");
-            	JSONObject data = (JSONObject) args[0];
-            	String from = data.getString(Constant.CLIENT_MESSAGE_FROM);	// get remote SocketID
-            	JSONObject payload = data.getJSONObject(Constant.PAYLOAD);
-//            	System.out.println("Client data = " + data);
-            	int event = payload.getInt(Constant.EVENT);
+				
+				try{
+				
+	            	JSONObject data = (JSONObject) args[0];
+	            	String from = data.getString(Constant.CLIENT_MESSAGE_FROM);	// get remote SocketID
+	            	JSONObject payload = data.getJSONObject(Constant.PAYLOAD);
+	//            	System.out.println("Client data = " + data);
+	            	int event = payload.getInt(Constant.EVENT);
+	            	
+	            	switch (event) {
+	            		case Constant.EVENT_CHECK_ACTIVE:{
+	            		
+	            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
+	                    	System.out.println(clientName + " get Message : 'check active' from : " + remoteName);
+	        				
+	                    	checkNewPeer(from, remoteName); // Checking new peer or not. If new, then add.
+	                    	sendClientMessage( setClientMessage(Constant.EVENT_CHECK_ACTIVE_RESPONSE, from, clientName) );
+	                    	
+	                    	break;
+	            		}
+	            		case Constant.EVENT_CHECK_ACTIVE_RESPONSE:{
+	            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
+	            			System.out.println(clientName + " get Message : 'response active' from : " + remoteName);
+	            			
+	            			break;
+	            		}
+	            			
+	            	}
             	
-            	switch (event) {
-            		case Constant.EVENT_CHECK_ACTIVE:{
-            		
-            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
-                    	System.out.println(clientName + " get Message : 'check active' from : " + remoteName);
-        				
-                    	checkNewPeer(from, remoteName); // Checking new peer or not. If new, then add.
-                    	sendClientMessage( setClientMessage(Constant.EVENT_CHECK_ACTIVE_RESPONSE, from, clientName) );
-                    	
-                    	break;
-            		}
-            		case Constant.EVENT_CHECK_ACTIVE_RESPONSE:{
-            			String remoteName = payload.getString(Constant.SOCKETIO_NAME);
-            			System.out.println(clientName + " get Message : 'response active' from : " + remoteName);
-            			
-            			break;
-            		}
-            			
-            	}
+				}catch(JSONException ex){
+					System.out.println("Error: " + ex);
+				}
             	
             	
             	

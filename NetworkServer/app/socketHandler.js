@@ -88,7 +88,6 @@ module.exports = function(io, request, clientList) {
 		 */
 		function handleConnected(payload){
 			var name = payload.name;
-			var customDeviceID = payload.CustomDeviceID;
 
 			var recordedClient = clientList.getClientByName(name);
 

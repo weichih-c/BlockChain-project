@@ -5,6 +5,5 @@
 	<classpathentry exported="true" kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer"/>
 	<classpathentry kind="lib" path="core-1.54.0.0.jar"/>
 	<classpathentry kind="lib" path="bcprov-jdk15on-156.jar"/>
-	<classpathentry kind="lib" path="org.json.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
