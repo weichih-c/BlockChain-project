@@ -175,4 +175,40 @@ public class Transaction {
 		this.anyChange = anyChange;
 	}
 	
+	
+	/**
+	 * Serialize a given transaction.
+	 * 
+	 * @param tx transaction
+	 * @return
+	 */
+	public static byte[] serializeTransaction(Transaction tx){
+		byte[] serializedTx;
+		byte[] version = Utils.getIntByteArray(tx.getVersion());
+		serializedTx = Arrays.copyOf(version, version.length);
+		byte[] txInputsCount = Utils.getIntByteArray(tx.getTxInputsSize());
+		serializedTx = Utils.concatenateByteArrays(serializedTx, txInputsCount);
+		
+		ArrayList<TransactionInput> txIns = tx.getTxInputs();
+	
+		List<byte[]>byteList = tx.encodeInputListToByteArray(txIns);
+		byte[] tIns = {};
+		for(byte[] b : byteList){
+			tIns = Utils.concatenateByteArrays(tIns, b);	// gathering all inputs together
+		}
+		serializedTx = Utils.concatenateByteArrays(serializedTx, tIns);	// add tx_Ins to Tx
+		
+		byte[] txOutputsCount = Utils.getIntByteArray(tx.getTxOutputsSize());
+		serializedTx = Utils.concatenateByteArrays(serializedTx, txOutputsCount);
+		
+		List<byte[]> byteList2 = tx.encodeOutputListToByteArray(tx.getTxOutputs());
+		byte[] tOuts = {};
+		for(byte[] b : byteList2){
+			tOuts = Utils.concatenateByteArrays(tOuts, b);	// gathering all inputs together
+		}
+		serializedTx = Utils.concatenateByteArrays(serializedTx, tOuts);	// add tx_outs to Tx
+		
+		return serializedTx;
+	}
+	
 }
