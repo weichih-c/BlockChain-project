@@ -35,6 +35,8 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -513,7 +515,14 @@ public class Utils {
      * @return
      */
     public static byte[] getIntByteArray(int num){
+    
     	return ByteBuffer.allocate(4).putInt(num).array();
+    }
+    
+    // encode the byte array to int
+    public static int byteArrayToInt(byte[] byteArray){
+    	ByteBuffer buffer = ByteBuffer.wrap(byteArray).order(ByteOrder.BIG_ENDIAN);
+    	return buffer.getInt();
     }
     
     

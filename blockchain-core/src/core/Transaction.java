@@ -1,5 +1,5 @@
 package core;
-import java.math.BigInteger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,9 +19,11 @@ public class Transaction {
 		this.tx_Outputs = new ArrayList<>();
 	}
 	
-	public Transaction(int version, BigInteger in_counter, ArrayList<TransactionInput> tx_inputs
-			, BigInteger out_counter, ArrayList<TransactionOutput> tx_outputs){
-		
+	public Transaction(int version, ArrayList<TransactionInput> tx_inputs,
+			ArrayList<TransactionOutput> tx_outputs){
+		this.version = version;
+		this.tx_Inputs = tx_inputs;
+		this.tx_Outputs = tx_outputs;
 	}
 	
 
@@ -95,7 +97,7 @@ public class Transaction {
 		return data;
 	}
 	
-	public TransactionInput decodeByteToTransactionInput(byte[] data){
+	public static TransactionInput decodeByteToTransactionInput(byte[] data){
 		TransactionInput txIn = (TransactionInput) SerializationUtils.deserialize(data);
 		return txIn;
 	}
@@ -113,7 +115,7 @@ public class Transaction {
     }
 	
 	// decode to transactionInput array
-	public ArrayList<TransactionInput> decodeByteArrayToInputList(List<byte[]> byteList){
+	public static ArrayList<TransactionInput> decodeByteArrayToInputList(List<byte[]> byteList){
 		
 		ArrayList<TransactionInput> list = new ArrayList<>();
 		for(byte[] arr : byteList){
@@ -129,7 +131,7 @@ public class Transaction {
 		return data;
 	}
 	
-	public TransactionOutput decodeByteToTransactionOutput(byte[] data){
+	public static TransactionOutput decodeByteToTransactionOutput(byte[] data){
 		TransactionOutput txOut = (TransactionOutput) SerializationUtils.deserialize(data);
 		return txOut;
 	}
@@ -147,7 +149,7 @@ public class Transaction {
     }
 	
 	// decode to transactionOutput array
-	public ArrayList<TransactionOutput> decodeByteArrayToOutputList(List<byte[]> byteList){
+	public static ArrayList<TransactionOutput> decodeByteArrayToOutputList(List<byte[]> byteList){
 		
 		ArrayList<TransactionOutput> list = new ArrayList<>();
 		for(byte[] arr : byteList){
@@ -186,29 +188,81 @@ public class Transaction {
 		byte[] serializedTx;
 		byte[] version = Utils.getIntByteArray(tx.getVersion());
 		serializedTx = Arrays.copyOf(version, version.length);
+		System.out.println("version len = "+version.length);
 		byte[] txInputsCount = Utils.getIntByteArray(tx.getTxInputsSize());
 		serializedTx = Utils.concatenateByteArrays(serializedTx, txInputsCount);
-		
+		System.out.println("tx Input Size = " + tx.getTxInputsSize());
+		System.out.println("txInputsCount len = "+txInputsCount.length);
+
 		ArrayList<TransactionInput> txIns = tx.getTxInputs();
 	
 		List<byte[]>byteList = tx.encodeInputListToByteArray(txIns);
-		byte[] tIns = {};
 		for(byte[] b : byteList){
-			tIns = Utils.concatenateByteArrays(tIns, b);	// gathering all inputs together
+			serializedTx = Utils.concatenateByteArrays(serializedTx, Utils.getIntByteArray(b.length));
+			serializedTx = Utils.concatenateByteArrays(serializedTx, b);	// gathering all inputs together
+			
+			System.out.println("input byte len = " + b.length);
+			
 		}
-		serializedTx = Utils.concatenateByteArrays(serializedTx, tIns);	// add tx_Ins to Tx
 		
 		byte[] txOutputsCount = Utils.getIntByteArray(tx.getTxOutputsSize());
 		serializedTx = Utils.concatenateByteArrays(serializedTx, txOutputsCount);
+		System.out.println("tx Out Size = " + tx.getTxOutputsSize());
+		System.out.println("txOutputsCount len = "+txOutputsCount.length);
 		
 		List<byte[]> byteList2 = tx.encodeOutputListToByteArray(tx.getTxOutputs());
-		byte[] tOuts = {};
 		for(byte[] b : byteList2){
-			tOuts = Utils.concatenateByteArrays(tOuts, b);	// gathering all inputs together
+			serializedTx = Utils.concatenateByteArrays(serializedTx, Utils.getIntByteArray(b.length));
+			serializedTx = Utils.concatenateByteArrays(serializedTx, b);	// gathering all inputs together
+			System.out.println("output byte len = " + b.length);
+
 		}
-		serializedTx = Utils.concatenateByteArrays(serializedTx, tOuts);	// add tx_outs to Tx
 		
 		return serializedTx;
 	}
 	
+	public static Transaction deserializeTransaction(byte[] data){
+		byte[] versionBytes = Arrays.copyOfRange(data, 0, 4);
+		int version = Utils.byteArrayToInt(versionBytes);
+		System.out.println("version = "+version);
+		
+		byte[] tInCountBytes = Arrays.copyOfRange(data, 4, 8);
+		int tInCount = Utils.byteArrayToInt(tInCountBytes);
+		System.out.println("input size = "+tInCount);
+		
+		List<byte[]> tInsList = new ArrayList<>();
+		int from = 8;
+		// iterative decode every txInput's byte array and add to a list
+		for(int a=0; a<tInCount; a++){
+			int tInByteLen = Utils.byteArrayToInt(Arrays.copyOfRange(data, from, from + 4));
+			System.out.println("input byte len = " + tInByteLen);
+			
+			byte[] tInBytes = Arrays.copyOfRange(data, from + 4, from + 4 + tInByteLen);
+			tInsList.add(tInBytes);
+			from = from + 4 + tInByteLen;
+		}
+		ArrayList<TransactionInput>txInsList = decodeByteArrayToInputList(tInsList);
+		
+		byte[] tOutCountBytes = Arrays.copyOfRange(data, from, from+4);
+		int tOutCount = Utils.byteArrayToInt(tOutCountBytes);
+		System.out.println("output size = "+tOutCount);
+		
+		List<byte[]> tOutsList = new ArrayList<>();
+		from = from+4;
+		// iterative decode every txOutput's byte array and add to a list
+		for(int a=0; a<tOutCount; a++){
+			int tOutByteLen = Utils.byteArrayToInt(Arrays.copyOfRange(data, from, from+4));
+			System.out.println("output byte len = " + tOutByteLen);
+			
+			byte[] tOutBytes = Arrays.copyOfRange(data, from + 4, from + 4 + tOutByteLen);
+			tOutsList.add(tOutBytes);
+			from = from + 4 + tOutByteLen;
+		}
+		ArrayList<TransactionOutput>txOutsList = decodeByteArrayToOutputList(tOutsList);
+
+		Transaction tx = new Transaction(version, txInsList, txOutsList);
+		return tx;
+		
+		
+	}
 }

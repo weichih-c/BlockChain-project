@@ -91,4 +91,57 @@ public class DBConnector {
 			}
 		}
 	}
+	
+	public byte[] getTransaction(int selectSize){
+		String querySQL = "select * from Transactions where Verified=0 and isChoose=0;";
+		byte[] tx;
+		try {
+			st = conn.createStatement(); 
+			resultSet = st.executeQuery(querySQL);
+			
+			
+			if(resultSet.next()) 
+			{
+//				System.out.println(resultSet.getInt("id")+"\t\t"+ 
+//						resultSet.getString("Hash")); 
+				
+				setTransactionChosen(resultSet.getInt("id"));
+				Blob tmp = resultSet.getBlob(3);
+				int blobLength = (int)tmp.length();
+				System.out.println("Len = " + blobLength);
+				tx = tmp.getBytes(1, blobLength);
+				tmp.free();
+				return tx;
+			} 
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		
+		return null;
+		
+	}
+	
+	private void setTransactionChosen(int id){
+		String updateSQL = "update Transactions set isChoose = ? where id = ?";
+		
+		try {
+			pst = conn.prepareStatement(updateSQL);
+			pst.setInt   (1, 1);
+			pst.setInt(2, id);
+
+			pst.executeUpdate();
+			
+		} catch (SQLException e) {
+			System.out.println("Error: " + e.getMessage());
+		}
+		finally{
+			try {
+				pst.close();
+			} catch (SQLException e) {
+				System.out.println("Error: " + e.getMessage());
+			}
+		}
+	}
 }

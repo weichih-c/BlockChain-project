@@ -1,18 +1,28 @@
 package core;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.sql.Date;
+import java.sql.Time;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class Miner {
+	
 	public static void main(String[] args){
+		DBConnector dbConnector = new DBConnector();
+
+		
 		Block genesisBlock = new Block().createGenesisBlock();
+//		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(genesisBlock.getTime())));
+//		dbConnector.saveBlock(genesisBlock);
 		
-		
-//		/// 只有第二個參數是跟前一個block有關，其他的都要重算，有些可以先用常數代替，還要加入Txs
-//		Block block1 = new Block(1, new Sha256Hash(genesisBlock.getBlockHeaderHash()), genesisBlock.getMerkleRoot()
-//				, Utils.currentTimeMillis(), genesisBlock.getDifficultyTarget(), genesisBlock.getNonce());
+		/// 只有第二個參數是跟前一個block有關，其他的都要重算，有些可以先用常數代替，還要加入Txs
+		Block block1 = new Block(1, new Sha256Hash(genesisBlock.getBlockHeaderHash()), genesisBlock.getMerkleRoot()
+				, Utils.currentTimeMillis(), genesisBlock.getDifficultyTarget(), genesisBlock.getNonce());
 	
 		Block bb = new Block();
+		System.out.println(Utils.currentTimeSeconds());
 		bb.setTime(Utils.currentTimeSeconds());
 		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
 		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
@@ -20,16 +30,22 @@ public class Miner {
 		Wallet minerWallet = new Wallet("public2", "private2");
 		Transaction newTx = new Miner().createCoinbaseTx(minerWallet);
 		
+		dbConnector.saveTransaction(newTx);	// test insert
+		
 		bb.addTransactionIntoBlock(newTx);
 		try {
 			bb.setMerkleRoot(calculateMerkleRoot(bb.getTransactions()));
 			
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			System.out.println(e);
 		}
 		
-		calculateNonce(bb);	// create a nonce, and next step is push to chain.
 		
+		byte[] a = dbConnector.getTransaction(1);
+		Transaction.deserializeTransaction(a);
+//		
+//		calculateNonce(bb);	// create a nonce, and next step is push to chain.
+//		dbConnector.saveBlock(bb);
 
 //		System.out.println("BlockHash = " + bb.getBlockHeaderHash());
 //		System.out.println("Block Version = " + bb.getVersion());
@@ -44,20 +60,23 @@ public class Miner {
 //		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
 //		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
 
-		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
-		
+//		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
+//		
 		Wallet user = new Wallet();
 		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user);
-		user.receiveMoney( expense );
-		if(expense.isAnyChange()){
-			minerWallet.receiveMoney(expense);
-		}
-		
-		System.out.println("user balance = " + user.getBalance() + "BTC");
-		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
-		
-		minerWallet.clearWalletSpentTXO();
-		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
+		dbConnector.saveTransaction(expense);
+		byte[] b = dbConnector.getTransaction(1);
+		Transaction.deserializeTransaction(b);
+//		user.receiveMoney( expense );
+//		if(expense.isAnyChange()){
+//			minerWallet.receiveMoney(expense);
+//		}
+//		
+//		System.out.println("user balance = " + user.getBalance() + "BTC");
+//		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
+//		
+//		minerWallet.clearWalletSpentTXO();
+//		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
 
 		
 
@@ -146,5 +165,37 @@ public class Miner {
 			
 			return new Sha256Hash( reverseEndian( HashGenerator.hashingSHA256Twice(tempArr) ) );
 		}
+	}
+	
+	// 從pool中選一些transaction用來算merkleRoot
+	public ArrayList<Transaction> chooseTransactions(DBConnector dbConnector, int pickupSize){
+		ArrayList<Transaction> txList = new ArrayList<>();
+		for(int a=0; a<pickupSize; a++){
+			byte[] txData = dbConnector.getTransaction(0);
+			Transaction tx = Transaction.deserializeTransaction(txData);
+			
+			// TODO: verify tx (complete functions below)
+			verifyTransaction(tx);
+
+			txList.add(tx);
+		}
+		
+		return txList;
+	}
+	
+	public void verifyTransaction(Transaction tx){
+		
+		// TODO: 驗證完tx之後要幫交易雙方加錢扣錢找錢
+		// 		 如果是沒過的tx要改資料庫
+		//		 驗證成功就可以去算block了
+	}
+	
+	public boolean equalVerify(String pubHashKey, String pubHashNew){
+		return false;
+	}
+	
+	public boolean checkSig(byte[] signature){
+		
+		return false;
 	}
 }
