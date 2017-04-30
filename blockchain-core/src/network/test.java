@@ -1,32 +1,34 @@
 package network;
 
+import core.Block;
+import core.DBConnector;
+
 public class test {
 
 	public static void main(String[] args) {
-//		String[] nameList = {"Chorong", "Bomi"};
-		String[] nameList = {"Chorong", "Bomi", "Eunji", "Naeun", "Namjoo", "HaYoung", "Joy", "Yeri", "Seulgi", "Irene", "Wendy"};
+		Block genesisBlock = new Block().createGenesisBlock();
+		DBConnector dbConnector = new DBConnector();
+		dbConnector.saveBlock(genesisBlock);
 		
-//		for(int i=0; i<nameList.length; i++){
-//			new Thread(new Node(nameList[i])).start();;
-//		}
-//		
-		Node chorong = new Node(nameList[0]);
-		new Thread(chorong).start();
+		String[] nameList ={"Jeff", "Amy", "Edward", "Neo", "Pan", "Jessie", "Krystal", "Joy", "Melanie", "Terry", "Irene", "Jake"};
+//		String[] nameList = {"Chorong", "Bomi", "Eunji", "Naeun", "Namjoo", "HaYoung", "Joy", "Yeri", "Seulgi", "Irene", "Wendy"};
 		
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		new Thread(new Node(nameList[0], NodeCharactor.TYPE_MINER)).start();
+		
+		for(int i=1; i<nameList.length; i++){
+			new Thread(new Node(nameList[i], NodeCharactor.TYPE_CLIENT)).start();;
 		}
 		
-		Node bomi = new Node(nameList[1]);
-		new Thread(bomi).start();
+//		Node chorong = new Node(nameList[0], NodeCharactor.TYPE_MINER);
+//		new Thread(chorong).start();
+//
+//		
+//		Node bomi = new Node(nameList[1], NodeCharactor.TYPE_CLIENT);
+//		new Thread(bomi).start();
+//		
+//		Node eunji = new Node(nameList[2], NodeCharactor.TYPE_CLIENT);
+//		new Thread(eunji).start();
 		
-		
-		// TODO: create connection to other peers
-		
-		// TODO: exchange the peerList of each other
 	}
 
 }

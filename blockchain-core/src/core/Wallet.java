@@ -5,31 +5,31 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Wallet {
 	private BigInteger balance;
 	private ArrayList<String> publicHashKeyList = new ArrayList<>();
-	private ArrayList<UnspentTXO> utxoList = new ArrayList<>();
+	private CopyOnWriteArrayList<UnspentTXO> utxoList = new CopyOnWriteArrayList<>();
+//	private List<UnspentTXO> utxoList = Collections.synchronizedList(new ArrayList<>());
 	private String keyInUse;
 	private String pubKeyPath;
 	private String privKeyPath;
 	private String walletName;
 	DBConnector dbConnector = new DBConnector();
 	
-	public static void main (String [] args){
-		Wallet w = new Wallet();
-		w.balance = new BigInteger("" +55523400000L);
-		System.out.println(w.getBalance() + "BTC");
-	}
 	
 	// if no specific key, will randomly generate a pair of keys
-	public Wallet(){
+	public Wallet(String walletName){
 		KeyUtils keyUtil = new KeyUtils();
 		RandomString rs = new RandomString(8); // generate a 8 characters string
 		String[] keyName = rs.generateKeyPairName();
 		
 		try {
-			this.walletName = keyName[0];
+			this.walletName = walletName;
 			keyUtil.keyGenerate(keyName[0], keyName[1]);	// 0 is pubKey, 1 is privKey
 			this.pubKeyPath = Constant.getKeyPath(keyName[0]);
 			this.privKeyPath = Constant.getKeyPath(keyName[1]);
@@ -65,7 +65,7 @@ public class Wallet {
 	 * 
 	 * @param transaction
 	 */
-	public void receiveMoney(Transaction transaction){
+	public synchronized void receiveMoney(Transaction transaction){
 		UnspentTXO utxo = new UnspentTXO();
 		utxo.setTransactionHash(transaction.getTx_hash());
 		
@@ -74,9 +74,24 @@ public class Wallet {
 		TransactionOutput txOut = transaction.getTxOutputs().get(index);
 		utxo.setIndexOfTxOutput(index);
 		utxo.setValue(txOut.getValue());
-		System.out.println(walletName + " received " + txOut.getValue());
+		System.out.println(walletName + " received " + txOut.getValue().doubleValue() * Math.pow(10, -8) + "BTC");
 		utxo.setScriptPubKey(txOut.getScriptPubKey());
 		
+		utxoList.add(utxo);
+	}
+	
+	public synchronized void receiveMoney(Sha256Hash txHash, int outputIndex, int value, byte[] scriptPubKey){
+		UnspentTXO utxo = new UnspentTXO();
+		utxo.setTransactionHash(txHash);
+		utxo.setIndexOfTxOutput(outputIndex);
+		utxo.setValue(new BigInteger("" + value));
+		
+		scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_HASH160);
+    	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);
+    	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_EQUALVERIFY);
+    	scriptPubKey = Utils.appendByte(scriptPubKey, OpCode.OP_CHECKSIG);
+		utxo.setScriptPubKey(scriptPubKey);
+		System.out.println(walletName + " received " + new BigInteger("" + value).doubleValue() * Math.pow(10, -8) + "BTC");
 		utxoList.add(utxo);
 	}
 	
@@ -102,6 +117,23 @@ public class Wallet {
 			}
 		}
 		
+//		for(Iterator<UnspentTXO> iterator = utxoList.iterator(); iterator.hasNext();){
+//			UnspentTXO utxo = iterator.next();
+//			
+//			if(!utxo.isSpent()){
+			// if it's a can spend utxo
+//			if( utxoIsVerified(utxo) ){
+				
+				// if pay < spentValue
+//				if(payUTXOAmount.compareTo(spentValue) < 0 ){
+//					payUTXOAmount = payUTXOAmount.add(utxo.getValue());
+//					readyToSpentTXO.add(utxo);
+//					utxo.setSpent(true); // remove the spent TXO from wallet
+//				}
+//			}
+//			}
+//		}
+		
 		
 		Transaction tx = new Transaction();
 		TransactionOutput txOut = new TransactionOutput();
@@ -120,13 +152,13 @@ public class Wallet {
     	tx.addTxOutput(txOut);
     	
 //    	System.out.println("pay money = " + payUTXOAmount.toString(10));
-    	System.out.println("SpentMoney = " + spentValue.toString(10));
+    	System.out.println("SpentMoney = " + spentValue.doubleValue()*Math.pow(10, -8) + "BTC");
     	
     	// there are changes after paying
     	if(payUTXOAmount.compareTo(spentValue) > 0){
     		TransactionOutput txOut_Change = new TransactionOutput();
     		BigInteger bi = payUTXOAmount.subtract(spentValue);
-    		System.out.println("Change = " +bi.toString(10));
+    		System.out.println("Change = " +bi.doubleValue()*Math.pow(10, -8) + "BTC");
     		txOut_Change.setValue(bi);
     		
     		// use the first key address.(Simple implementation)
@@ -198,18 +230,23 @@ public class Wallet {
 		
 		BigInteger balance = this.balance;
 		for(UnspentTXO utxo : utxoList){
-			if( utxoIsVerified(utxo) ){
+//			if( utxoIsVerified(utxo) ){
 				if(! utxo.isSpent()){
 					balance = balance.add(utxo.getValue());
-				}
+//				}
 			}
 		}
-		System.out.println("utxoList records = " + utxoList.size());
+//		System.out.println("utxoList records = " + utxoList.size());
 		
 		return balance.doubleValue() * Math.pow(10, -8);
 	}
 	
 	public void clearWalletSpentTXO(){
+//		for(Iterator<UnspentTXO> iterator = utxoList.iterator(); iterator.hasNext();){
+//			UnspentTXO utxo = iterator.next();
+//			if(utxo.isSpent())
+//				iterator.remove();
+//		}
 		for(UnspentTXO utxo : utxoList){
 			if(utxo.isSpent())
 				utxoList.remove(utxo);

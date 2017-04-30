@@ -41,7 +41,7 @@ public class Consumer {
 	 * @throws NoSuchAlgorithmException
 	 * @throws IOException
 	 */
-	public ArrayList<TransactionInput> makeScriptSignature(Transaction transaction, ArrayList<UnspentTXO> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+	public ArrayList<TransactionInput> makeScriptSignature(Transaction transaction, List<UnspentTXO> utxoList) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
 		byte[] scriptSig = {};
 		
 		KeyUtils keyUtil = new KeyUtils();

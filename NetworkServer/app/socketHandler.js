@@ -7,7 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 module.exports = function(io, request, clientList) {
 
-	var INIT_PEER_PROVIDING_SIZE = 1;
+	var INIT_PEER_PROVIDING_SIZE = 3;
 
 	var TYPE_CONNECTION = 0x01;
 	var TYPE_EVENT = 0x02;
@@ -20,7 +20,7 @@ module.exports = function(io, request, clientList) {
 		client.emit('id', client.id);
 
 		client.on('clientMessage', function (details) {
-			console.log("relay client message");
+			// console.log("relay client message");
 			// console.log(details);
 			var otherClient = io.sockets.connected[details.payload.to];	// 把otherClient設為訊息的收件人
 			// console.log(otherClient);
@@ -88,12 +88,12 @@ module.exports = function(io, request, clientList) {
 		 */
 		function handleConnected(payload){
 			var name = payload.name;
-
+			var pubkeyHashAddr = payload.pubKeyHashAddress;
 			var recordedClient = clientList.getClientByName(name);
 
 			if(recordedClient == null){
 				console.log('[INFO] ' + payload.name + " initial connected");
-				clientList.addClient(client.id, payload.name, null);	// add a new client to list
+				clientList.addClient(client.id, payload.name, pubkeyHashAddr);	// add a new client to list
 
 			}else{
 				console.log('[INFO] ' + payload.name + " reconnected");

@@ -104,8 +104,8 @@ public class DBConnector {
 			
 			if(resultSet.next()) 
 			{
-				System.out.println(resultSet.getInt("id")+"\t\t"+ 
-						resultSet.getString("Hash")); 
+//				System.out.println(resultSet.getInt("id")+"\t\t"+ 
+//						resultSet.getString("Hash")); 
 				
 				setTransactionChosen(resultSet.getInt("id"));
 				Blob tmp = resultSet.getBlob(3);
@@ -219,8 +219,8 @@ public class DBConnector {
 			resultSet = st.executeQuery(querySQL);
 			
 			if(resultSet.last()){
-				System.out.println(resultSet.getInt("id")+"\t"+
-									resultSet.getString("BlockHash"));
+//				System.out.println(resultSet.getInt("id")+"\t"+
+//									resultSet.getString("BlockHash"));
 
 				b.setVersion(1);
 				b.setMerkleRoot(new Sha256Hash(resultSet.getString("MerkleRoot")));

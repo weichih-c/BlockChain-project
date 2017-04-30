@@ -33,7 +33,7 @@ public class Miner {
 		Wallet minerWallet = new Wallet("public2", "private2");
 		miner.mineBlock(minerWallet);
 		
-		Wallet user = new Wallet();
+		Wallet user = new Wallet("User");
 		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user.showPubKeyAddress(0));
 		dbConnector.saveTransaction(expense);
 		
@@ -45,7 +45,7 @@ public class Miner {
 			minerWallet.receiveMoney(expense);
 		}
 		
-		Wallet user2 = new Wallet();
+		Wallet user2 = new Wallet("User2");
 		Transaction ex2 = user.createGeneralTransaction(1050000000, user, user2.showPubKeyAddress(0));
 		dbConnector.saveTransaction(ex2);
 		user2.receiveMoney(ex2);
@@ -70,10 +70,10 @@ public class Miner {
 		dbConnector.setTransactionVerified(coinbaseTx.getTx_hash().toString(), 1); // set coinbaseTx verified
 		b.addTransactionIntoBlock(coinbaseTx);
 		
-		ArrayList<Transaction> txList = this.pickupTransactionsFromPool(dbConnector, 1);
-		System.out.println("txlist size = " + txList.size());
+		ArrayList<Transaction> txList = this.pickupTransactionsFromPool(dbConnector, 4);
+//		System.out.println("txlist size = " + txList.size());
 		for(Transaction tx : txList){
-			System.out.println("tx = " + tx.getTx_hash().toString());
+//			System.out.println("tx = " + tx.getTx_hash().toString());
 			b.addTransactionIntoBlock(tx);
 		}
 
@@ -108,7 +108,7 @@ public class Miner {
 		    String hash = block.getBlockHeaderHash();
 //			System.out.println("Calculating...Hash = " + hash);
 
-			if(hash.startsWith("000")){
+			if(hash.startsWith("0000")){
 				return nonce;
 			}
 		}
@@ -174,7 +174,7 @@ public class Miner {
 		for(int a=0; a<pickupSize; a++){
 			byte[] txData = dbConnector.getTransactionsForVerify(0);
 			if(txData.length == 0){
-				return txList;	// return empty list
+				continue;	// return empty list
 			}
 			Transaction tx = Transaction.deserializeTransaction(txData);
 			
