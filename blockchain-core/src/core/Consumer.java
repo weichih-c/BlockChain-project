@@ -14,6 +14,9 @@ public class Consumer {
 	private String pubKeyPath;
 	private String privKeyPath;
 
+	public Consumer(){
+		// empty constructor used for invoking methods
+	}
 	
 	public Consumer(String PubKeyPath, String PrivKeyPath){
 		this.pubKeyPath = PubKeyPath;
@@ -44,7 +47,7 @@ public class Consumer {
 		KeyUtils keyUtil = new KeyUtils();
 		PrivateKey privKey = keyUtil.loadPrivateKey(privKeyPath, algorithmName);
 		byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
-		
+		System.out.println("Pubkey Len = " + pubKey.length);
 		ArrayList<TransactionInput> txIns = transaction.getTxInputs();
 		Transaction txCopy = transaction;	// the transaction which is hashed is a copy.
 
@@ -53,7 +56,10 @@ public class Consumer {
 		for(int index=0; index < txIns.size(); index++){
 			byte[] txData = hashModifiedTransactions(txCopy, index, utxoList.get(index) );
 			byte[] signature = keyUtil.makeSignature(privKey, txData);	// make the signature using private key
-			scriptSig = Utils.concatenateByteArrays(signature, pubKey);
+			
+			int signatureLen = signature.length;	// put the signature byte length front of scriptSig
+			scriptSig = Utils.concatenateByteArrays(Utils.getIntByteArray(signatureLen), signature);
+			scriptSig = Utils.concatenateByteArrays(scriptSig, pubKey);
 //			System.out.println("txIn ScriptSig = " + Utils.getHexString( txIns.get(index).getScriptSignature()));
 //			System.out.println("txIn scriptSigLen = " + txIns.get(index).getScriptLen());
 			
@@ -85,6 +91,11 @@ public class Consumer {
 
 	}
 	
+	public byte[] hashModifiedTransactions(byte[] modifiedTransactionData){
+		return HashGenerator.hashingSHA256Twice(modifiedTransactionData);
+
+	}
+	
 	/** calculate the modifiedTransaction and transform to byte[]
 	 *  set the scriptLen and ScriptSignature fields in all transactionInput to 0 and null respectively
 	 * 
@@ -107,6 +118,53 @@ public class Consumer {
 				byte[] scriptPubKeyWithoutOPs = removeOpcodesFromScriptPubKey(uTXO.getScriptPubKey());
 				txIns.get(a).setScriptSignature(scriptPubKeyWithoutOPs);
 				txIns.get(a).setScriptLen(new BigInteger("" + scriptPubKeyWithoutOPs.length, 16));
+			}else{
+				txIns.get(a).setScriptSignature(null);
+				txIns.get(a).setScriptLen("0");
+			}
+		}
+	
+		List<byte[]>byteList = tx.encodeInputListToByteArray(txIns);
+		byte[] tIns = {};
+		for(byte[] b : byteList){
+			tIns = Utils.concatenateByteArrays(tIns, b);	// gathering all inputs together
+		}
+		serializedTx = Utils.concatenateByteArrays(serializedTx, tIns);	// add tx_Ins to Tx
+		
+		byte[] txOutputsCount = Utils.getIntByteArray(tx.getTxOutputsSize());
+		serializedTx = Utils.concatenateByteArrays(serializedTx, txOutputsCount);
+		
+		List<byte[]> byteList2 = tx.encodeOutputListToByteArray(tx.getTxOutputs());
+		byte[] tOuts = {};
+		for(byte[] b : byteList2){
+			tOuts = Utils.concatenateByteArrays(tOuts, b);	// gathering all inputs together
+		}
+		serializedTx = Utils.concatenateByteArrays(serializedTx, tOuts);	// add tx_outs to Tx
+		
+		return serializedTx;
+	}
+	
+	/** calculate the modifiedTransaction and transform to byte[]
+	 *  set the scriptLen and ScriptSignature fields in all transactionInput to 0 and null respectively
+	 * 
+	 * @param tx
+	 * @param txInputIndex which txInput ScriptSig generating
+	 * @param scriptPubkeyWithoutOpcodes previous txOutput pubkeyHash without opcodes
+	 * 
+	 * @return
+	 */
+	public byte[] modifyTransaction(Transaction tx, int txInputIndex, byte[] scriptPubkeyWithoutOpcodes){
+		byte[] serializedTx;
+		byte[] version = Utils.getIntByteArray(tx.getVersion());
+		serializedTx = Arrays.copyOf(version, version.length);
+		byte[] txInputsCount = Utils.getIntByteArray(tx.getTxInputsSize());
+		serializedTx = Utils.concatenateByteArrays(serializedTx, txInputsCount);
+		
+		ArrayList<TransactionInput> txIns = tx.getTxInputs();
+		for(int a = 0; a < txIns.size(); a++){
+			if(a == txInputIndex){
+				txIns.get(a).setScriptSignature(scriptPubkeyWithoutOpcodes);
+				txIns.get(a).setScriptLen(new BigInteger("" + scriptPubkeyWithoutOpcodes.length, 16));
 			}else{
 				txIns.get(a).setScriptSignature(null);
 				txIns.get(a).setScriptLen("0");

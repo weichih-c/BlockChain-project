@@ -1,28 +1,36 @@
 package core;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.sql.Date;
-import java.sql.Time;
-import java.text.SimpleDateFormat;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 
+import org.spongycastle.util.Arrays;
+
 public class Miner {
+	DBConnector dbConnector;
+	
+	public Miner(){
+		dbConnector = new DBConnector();
+	}
+
 	
 	public static void main(String[] args){
 		DBConnector dbConnector = new DBConnector();
-
+		Miner miner = new Miner();
 		
 		Block genesisBlock = new Block().createGenesisBlock();
-//		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(genesisBlock.getTime())));
-//		dbConnector.saveBlock(genesisBlock);
-		
-		/// 只有第二個參數是跟前一個block有關，其他的都要重算，有些可以先用常數代替，還要加入Txs
-		Block block1 = new Block(1, new Sha256Hash(genesisBlock.getBlockHeaderHash()), genesisBlock.getMerkleRoot()
-				, Utils.currentTimeMillis(), genesisBlock.getDifficultyTarget(), genesisBlock.getNonce());
+		dbConnector.saveBlock(genesisBlock);
 	
 		Block bb = new Block();
-		System.out.println(Utils.currentTimeSeconds());
 		bb.setTime(Utils.currentTimeSeconds());
 		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
 		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
@@ -31,8 +39,14 @@ public class Miner {
 		Transaction newTx = new Miner().createCoinbaseTx(minerWallet);
 		
 		dbConnector.saveTransaction(newTx);	// test insert
-		
+		dbConnector.setTransactionVerified(newTx.getTx_hash().toString(), 1); // set coinbase tx verified
 		bb.addTransactionIntoBlock(newTx);
+		
+		ArrayList<Transaction> txList = miner.pickupTransactionsFromPool(dbConnector, 1);
+		for(Transaction tx : txList){
+			bb.addTransactionIntoBlock(tx);
+		}
+
 		try {
 			bb.setMerkleRoot(calculateMerkleRoot(bb.getTransactions()));
 			
@@ -40,33 +54,16 @@ public class Miner {
 			System.out.println(e);
 		}
 		
-		
-		byte[] a = dbConnector.getTransaction(1);
-		Transaction.deserializeTransaction(a);
-//		
-//		calculateNonce(bb);	// create a nonce, and next step is push to chain.
-//		dbConnector.saveBlock(bb);
+		calculateNonce(bb);	// create a nonce, and next step is push to chain.
+		dbConnector.saveBlock(bb);
 
-//		System.out.println("BlockHash = " + bb.getBlockHeaderHash());
-//		System.out.println("Block Version = " + bb.getVersion());
-//		System.out.println("Block PrevBlockHash = " + bb.getPrevBlockHash());
-//		System.out.println("Block MerkleRoot = " + bb.getMerkleRoot());
-//		System.out.println("Block Time = " + bb.getTime());
-//		System.out.println("Block Difficulty = " + bb.getDifficultyTarget());
-//		System.out.println("Block Nonce = " + bb.getNonce());
-//		System.out.println("Block Transaction Size = " + bb.getTransactionSize());
-//		Transaction tx = bb.getTransactions().get(0);
-//		System.out.println("Transaction 1 Hash = " + tx.getTx_hash().toString());
-//		System.out.println("Transaction 1 input size = " + tx.getTxInputsSize());
-//		System.out.println("Transaction 1 output size = " + tx.getTxOutputsSize());
-
-//		System.out.println("Wallet Balance of miner = " + minerWallet.getBalance() + "BTC");
-//		
 		Wallet user = new Wallet();
 		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user);
 		dbConnector.saveTransaction(expense);
-		byte[] b = dbConnector.getTransaction(1);
-		Transaction.deserializeTransaction(b);
+		
+		
+		
+		
 //		user.receiveMoney( expense );
 //		if(expense.isAnyChange()){
 //			minerWallet.receiveMoney(expense);
@@ -85,6 +82,37 @@ public class Miner {
 //		Transaction newTx2 = new Miner().createCoinbaseTx(miner2);
 //		System.out.println(newTx2.getTx_hash());
 		
+		
+	}
+	
+	public void mineBlock(Wallet minerWallet){
+		Block lastBlock = dbConnector.getLastBlock();
+		Block b = new Block();
+		
+		b.setTime(Utils.currentTimeSeconds());
+		b.setPrevBlockHash(new Sha256Hash(lastBlock.getBlockHeaderHash()));
+		b.setDifficultyTarget(lastBlock.getDifficultyTarget());
+		
+		Transaction coinbaseTx = this.createCoinbaseTx(minerWallet);
+		
+		dbConnector.saveTransaction(coinbaseTx);	// test insert
+		dbConnector.setTransactionVerified(coinbaseTx.getTx_hash().toString(), 1); // set coinbaseTx verified
+		b.addTransactionIntoBlock(coinbaseTx);
+		
+		ArrayList<Transaction> txList = this.pickupTransactionsFromPool(dbConnector, 1);
+		for(Transaction tx : txList){
+			b.addTransactionIntoBlock(tx);
+		}
+
+		try {
+			b.setMerkleRoot(calculateMerkleRoot(b.getTransactions()));
+			
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		
+		calculateNonce(b);	// create a nonce, and next step is push to chain.
+		dbConnector.saveBlock(b);
 		
 	}
 	
@@ -168,14 +196,18 @@ public class Miner {
 	}
 	
 	// 從pool中選一些transaction用來算merkleRoot
-	public ArrayList<Transaction> chooseTransactions(DBConnector dbConnector, int pickupSize){
+	public ArrayList<Transaction> pickupTransactionsFromPool(DBConnector dbConnector, int pickupSize){
 		ArrayList<Transaction> txList = new ArrayList<>();
 		for(int a=0; a<pickupSize; a++){
-			byte[] txData = dbConnector.getTransaction(0);
+			byte[] txData = dbConnector.getTransactionsForVerify(0);
+			if(txData.length == 0){
+				return txList;	// return empty list
+			}
 			Transaction tx = Transaction.deserializeTransaction(txData);
 			
-			// TODO: verify tx (complete functions below)
-			verifyTransaction(tx);
+			if(verifyTransaction(dbConnector, tx)){
+				continue;
+			}
 
 			txList.add(tx);
 		}
@@ -183,19 +215,123 @@ public class Miner {
 		return txList;
 	}
 	
-	public void verifyTransaction(Transaction tx){
+	public Transaction findPrevTransaction(DBConnector dbConnector, String txHash){
+		byte[] txData = dbConnector.getTransaction(txHash);
+		Transaction tx = Transaction.deserializeTransaction(txData);
+		return tx;
 		
-		// TODO: 驗證完tx之後要幫交易雙方加錢扣錢找錢
-		// 		 如果是沒過的tx要改資料庫
-		//		 驗證成功就可以去算block了
+	}
+	
+	
+	// verify a transaction, if any unpassed condition, then return false.
+	public boolean verifyTransaction(DBConnector dbConnector, Transaction tx){
+		String transactionHash = tx.getTx_hash().toString();
+		ArrayList<TransactionInput> tIns = tx.getTxInputs();
+		
+		int inputIndex = 0;
+		for(TransactionInput input : tIns){
+			String prevHash = input.getPrev_hash();
+			int prevOutputIndex = input.getPrev_txOut_index().intValue();
+			Transaction prevTx = findPrevTransaction(dbConnector, prevHash);
+			byte[] prevScriptPubkey = prevTx.getTxOutputs().get(prevOutputIndex).getScriptPubKey();
+			String prevPubkeyHash = getPrevPubkeyHash(prevScriptPubkey);
+			byte[] scriptSig = input.getScriptSignature();
+			int signatureLen = Utils.byteArrayToInt(Arrays.copyOfRange(scriptSig, 0, 4));	// first 4 bytes are len integer
+			byte[] signature = Arrays.copyOfRange(scriptSig, 4, 4+signatureLen);
+			byte[] pubkey = Arrays.copyOfRange(scriptSig, 4+signatureLen, scriptSig.length);
+			
+			// create the consumer object for getting the hashTx by the methods
+			Consumer consumer = new Consumer();
+			byte[] txData = consumer.modifyTransaction(tx, 
+									inputIndex, 
+									consumer.removeOpcodesFromScriptPubKey(prevScriptPubkey));
+
+			byte[] sigOriginData = consumer.hashModifiedTransactions(txData);
+					
+			if(! equalVerify(prevPubkeyHash, getProcessedPubkeyHash(pubkey) )){
+//				System.out.println("Verify Error: equalVerify");
+				dbConnector.setTransactionVerified(transactionHash, 0);
+				return false;
+			}
+			
+			if(! checkSig(pubkey, signature, sigOriginData)){
+//				System.out.println("Verify Error: checkSig");
+				dbConnector.setTransactionVerified(transactionHash, 0);
+				return false;
+			}
+			
+//			System.out.println("verify success : " + transactionHash);
+			dbConnector.setTransactionVerified(transactionHash, 1);
+			
+
+		}
+		
+		return true;
+		
 	}
 	
 	public boolean equalVerify(String pubHashKey, String pubHashNew){
-		return false;
+//		System.out.println(pubHashNew);
+//		System.out.println(pubHashKey);
+		return pubHashNew.equals(pubHashKey);
 	}
 	
-	public boolean checkSig(byte[] signature){
+	public boolean checkSig(byte[] pubkey, byte[] signature, byte[] originSigData){
+		try {
+			PublicKey publicKey = 
+				    KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(pubkey));
+			
+			Signature sig = Signature.getInstance("SHA256withECDSA");
+			sig.initVerify(publicKey);
+			sig.update(originSigData);
+			return sig.verify(signature);
+			
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException | InvalidKeyException e) {
+			e.printStackTrace();
+			return false;
+		} catch (SignatureException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+	
+	private String getPrevPubkeyHash(byte[] scriptPubKey){
+		byte[] pubkeyHash = Arrays.copyOfRange(scriptPubKey, 2, scriptPubKey.length-2);
+		return Utils.getHexString(pubkeyHash);
+	}
+	
+	private String getProcessedPubkeyHash(byte[] pubkey){
+		String base58Pubkey = getPublicHashKey(pubkey);
+		return Utils.getHexString(base58Pubkey.getBytes());
+	}
+	
+	private String getPublicHashKey(byte[] pubkey){
+		// get public key from keyStore
+		PublicKey publicKey = null;
+		try {
+			publicKey = KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(pubkey));
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		return false;
+		// generate a pubKeyHash
+		byte[] pubKeyHash = HashGenerator.hashingRIPEMD160(HashGenerator.hashingSHA256(publicKey.getEncoded()));
+		
+		byte[] pkhPrefix = { 0x00 };	// prefix 1 byte (0x00)
+		byte[] pkhChecksum = HashGenerator.hashingSHA256Twice(pubKeyHash);	// truncate first 4 bytes
+		pkhChecksum = Arrays.copyOfRange(pkhChecksum, 0, 4);
+		
+		
+		// concatenate arrays including prefix, pubKeyHash, checksum
+		byte[] p2pkhAddress = Utils.concatenateByteArrays(pkhPrefix, pubKeyHash);
+		p2pkhAddress = Utils.concatenateByteArrays(p2pkhAddress, pkhChecksum);
+
+		return Base58.encode( p2pkhAddress );	// return a string encoded by Base58
+
 	}
 }

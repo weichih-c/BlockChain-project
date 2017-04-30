@@ -92,9 +92,47 @@ public class DBConnector {
 		}
 	}
 	
-	public byte[] getTransaction(int selectSize){
+	public byte[] getTransactionsForVerify(int selectSize){
 		String querySQL = "select * from Transactions where Verified=0 and isChoose=0;";
-		byte[] tx;
+		byte[] tx={};
+		try {
+			st = conn.createStatement(); 
+			resultSet = st.executeQuery(querySQL);
+			
+			
+			if(resultSet.next()) 
+			{
+				System.out.println(resultSet.getInt("id")+"\t\t"+ 
+						resultSet.getString("Hash")); 
+				
+				setTransactionChosen(resultSet.getInt("id"));
+				Blob tmp = resultSet.getBlob(3);
+				int blobLength = (int)tmp.length();
+//				System.out.println("Len = " + blobLength);
+				tx = tmp.getBytes(1, blobLength);
+				tmp.free();
+			} 
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				st.close();
+				return tx;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
+		
+	}
+	
+	public byte[] getTransaction(String txHash) {
+		String querySQL = "select * from Transactions where Hash='" + txHash +"';";
+		byte[] tx = {};
 		try {
 			st = conn.createStatement(); 
 			resultSet = st.executeQuery(querySQL);
@@ -105,22 +143,25 @@ public class DBConnector {
 //				System.out.println(resultSet.getInt("id")+"\t\t"+ 
 //						resultSet.getString("Hash")); 
 				
-				setTransactionChosen(resultSet.getInt("id"));
 				Blob tmp = resultSet.getBlob(3);
 				int blobLength = (int)tmp.length();
-				System.out.println("Len = " + blobLength);
 				tx = tmp.getBytes(1, blobLength);
 				tmp.free();
-				return tx;
 			} 
-			
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} 
+		finally{
+			try {
+				st.close();
+				return tx;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		return null;
-		
 	}
 	
 	private void setTransactionChosen(int id){
@@ -143,5 +184,63 @@ public class DBConnector {
 				System.out.println("Error: " + e.getMessage());
 			}
 		}
+	}
+	
+	public void setTransactionVerified(String txHash, int passOrNot){
+		String updateSQL = "update Transactions set Verified = ?, verifyPass = ? where Hash = ?";
+		
+		try {
+			pst = conn.prepareStatement(updateSQL);
+			pst.setInt(1, 1);
+			pst.setInt(2, passOrNot);
+			pst.setString(3, txHash);
+
+			pst.executeUpdate();
+			
+		} catch (SQLException e) {
+			System.out.println("Error: " + e.getMessage());
+		}
+		finally{
+			try {
+				pst.close();
+			} catch (SQLException e) {
+				System.out.println("Error: " + e.getMessage());
+			}
+		}
+	}
+	
+	public Block getLastBlock(){
+		String querySQL = "select * from blocks;";
+		Block b = new Block();
+		try {
+			st = conn.createStatement(); 
+			resultSet = st.executeQuery(querySQL);
+			
+			if(resultSet.last()){
+				System.out.println(resultSet.getInt("id")+"\t"+
+									resultSet.getString("BlockHash"));
+
+				b.setVersion(1);
+				b.setMerkleRoot(new Sha256Hash(resultSet.getString("MerkleRoot")));
+				b.setDifficultyTarget(486604799L);
+				b.setNonce(resultSet.getInt("Nonce"));
+				b.setTime(resultSet.getTime("Time").getTime());
+				b.setBlockHash(new Sha256Hash(resultSet.getString("BlockHash")));
+			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		finally{
+			try {
+				st.close();
+				return b;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
 	}
 }

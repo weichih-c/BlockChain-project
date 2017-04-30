@@ -106,7 +106,7 @@ public class Block {
     	genesisBlock.setNonce(nonce);
     	
     	Transaction coinbaseTx = new Transaction();
-    	genesisBlock.addTransactionIntoBlock(coinbaseTx);
+
     	TransactionInput txIn = new TransactionInput();
     	txIn.setPrev_hash("0000000000000000000000000000000000000000000000000000000000000000");
     	txIn.setPrev_txOut_index("ffffffff");
@@ -135,6 +135,11 @@ public class Block {
     	coinbaseTx.setVersion(1);
     	coinbaseTx.addTxInput(txIn);
     	coinbaseTx.addTxOutput(txOut);
+    	genesisBlock.addTransactionIntoBlock(coinbaseTx);
+    	
+    	DBConnector dbConnector = new DBConnector();
+    	dbConnector.saveTransaction(coinbaseTx);	// test insert
+		dbConnector.setTransactionVerified(coinbaseTx.getTx_hash().toString(), 1); // set coinbase tx verified
     	
     	return genesisBlock;
     }
@@ -204,7 +209,7 @@ public class Block {
 	}
 	
 
-	private void setBlockHash(Sha256Hash hash) {
+	public void setBlockHash(Sha256Hash hash) {
 		this.hash = hash;
 	}
 	

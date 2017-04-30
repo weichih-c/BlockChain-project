@@ -115,7 +115,7 @@ public class Wallet {
     	txOut.setScriptLen(new BigInteger(Integer.toHexString(scriptPubKey.length), 16));
     	tx.addTxOutput(txOut);
     	
-    	System.out.println("pay money = " + payUTXOAmount.toString(10));
+//    	System.out.println("pay money = " + payUTXOAmount.toString(10));
     	System.out.println("SpentMoney = " + spentValue.toString(10));
     	
     	// there are changes after paying
