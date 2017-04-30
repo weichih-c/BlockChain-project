@@ -1,6 +1,7 @@
 package core;
 
 import java.sql.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 
@@ -68,6 +69,7 @@ public class DBConnector {
 		try {
 			pst = conn.prepareStatement(insertSQL);
 			String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(block.getTime()));
+//			System.out.println("time before save = " + time);
 			pst.setString(1, time); // set 'Time'
 			
 			pst.setInt(2, block.getNonce()); // set 'Nonce'
@@ -224,7 +226,17 @@ public class DBConnector {
 				b.setMerkleRoot(new Sha256Hash(resultSet.getString("MerkleRoot")));
 				b.setDifficultyTarget(486604799L);
 				b.setNonce(resultSet.getInt("Nonce"));
-				b.setTime(resultSet.getTime("Time").getTime());
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				java.util.Date time;
+				try {
+					time = formatter.parse(resultSet.getString("Time"));
+//					System.out.println("Time after get = " + time);
+					b.setTime(time.getTime());
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+
+				b.setPrevBlockHash(new Sha256Hash(resultSet.getString("PrevBlockHash")));
 				b.setBlockHash(new Sha256Hash(resultSet.getString("BlockHash")));
 			}
 			
@@ -242,5 +254,38 @@ public class DBConnector {
 		}
 		
 		return null;
+	}
+	
+	public boolean checkTransactionVerified(String txHash){
+		String querySQL = "select * from Transactions where Hash='" + txHash +"';";
+		int isVerified = 0;
+		try {
+			st = conn.createStatement(); 
+			resultSet = st.executeQuery(querySQL);
+			
+			
+			if(resultSet.next()) 
+			{
+//				System.out.println(resultSet.getInt("id")+"\t\t"+ 
+//						resultSet.getString("Hash")); 
+				
+				isVerified = resultSet.getInt("Verified");
+				
+			} 
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		finally{
+			try {
+				st.close();
+				
+				return (isVerified==0) ? false : true;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return false;
 	}
 }

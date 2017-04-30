@@ -213,6 +213,10 @@ public class Block {
 		this.hash = hash;
 	}
 	
+	public String getBlockHashWithoutCalculate(){
+		return hash.toString();
+	}
+	
 	
 	/**
 	 * hash the block header, and return a hex String
@@ -229,6 +233,7 @@ public class Block {
 		blockHeader = Utils.concatenateByteArrays(blockHeader, reverseEndian(this.prevBlockHash.getBytes()));
 //		System.out.println(getHexString(this.merkleRoot.getBytes()));
 		blockHeader = Utils.concatenateByteArrays(blockHeader, reverseEndian(this.merkleRoot.getBytes()));
+//		System.out.println(Long.toHexString(time));
 		byte[] time = reverseEndian(Utils.getHexEncodeByteArray(this.time));
 //		System.out.println(getHexString(time));
 		blockHeader = Utils.concatenateByteArrays(blockHeader, time);

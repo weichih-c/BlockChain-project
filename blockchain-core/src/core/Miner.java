@@ -1,6 +1,5 @@
 package core;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -29,68 +28,40 @@ public class Miner {
 		
 		Block genesisBlock = new Block().createGenesisBlock();
 		dbConnector.saveBlock(genesisBlock);
-	
-		Block bb = new Block();
-		bb.setTime(Utils.currentTimeSeconds());
-		bb.setPrevBlockHash(new Sha256Hash(genesisBlock.getBlockHeaderHash()));
-		bb.setDifficultyTarget(genesisBlock.getDifficultyTarget());
-		
+
+
 		Wallet minerWallet = new Wallet("public2", "private2");
-		Transaction newTx = new Miner().createCoinbaseTx(minerWallet);
+		miner.mineBlock(minerWallet);
 		
-		dbConnector.saveTransaction(newTx);	// test insert
-		dbConnector.setTransactionVerified(newTx.getTx_hash().toString(), 1); // set coinbase tx verified
-		bb.addTransactionIntoBlock(newTx);
-		
-		ArrayList<Transaction> txList = miner.pickupTransactionsFromPool(dbConnector, 1);
-		for(Transaction tx : txList){
-			bb.addTransactionIntoBlock(tx);
-		}
-
-		try {
-			bb.setMerkleRoot(calculateMerkleRoot(bb.getTransactions()));
-			
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-		
-		calculateNonce(bb);	// create a nonce, and next step is push to chain.
-		dbConnector.saveBlock(bb);
-
 		Wallet user = new Wallet();
-		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user);
+		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user.showPubKeyAddress(0));
 		dbConnector.saveTransaction(expense);
 		
+		miner.mineBlock(minerWallet);
 		
 		
+		user.receiveMoney(expense);
+		if(expense.isAnyChange()){
+			minerWallet.receiveMoney(expense);
+		}
 		
-//		user.receiveMoney( expense );
-//		if(expense.isAnyChange()){
-//			minerWallet.receiveMoney(expense);
-//		}
-//		
-//		System.out.println("user balance = " + user.getBalance() + "BTC");
-//		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
-//		
-//		minerWallet.clearWalletSpentTXO();
-//		System.out.println("miner balance = " + minerWallet.getBalance() + "BTC");
+		Wallet user2 = new Wallet();
+		Transaction ex2 = user.createGeneralTransaction(1050000000, user, user2.showPubKeyAddress(0));
+		dbConnector.saveTransaction(ex2);
+		user2.receiveMoney(ex2);
+		if(ex2.isAnyChange()){
+			user.receiveMoney(ex2);
+		}
 
-		
-
-//		String keyPath2 = Constant.getPubKeyPath("public3");
-//		Receiver miner2 = new Receiver(keyPath2);
-//		Transaction newTx2 = new Miner().createCoinbaseTx(miner2);
-//		System.out.println(newTx2.getTx_hash());
-		
+		miner.mineBlock(minerWallet);
 		
 	}
 	
 	public void mineBlock(Wallet minerWallet){
 		Block lastBlock = dbConnector.getLastBlock();
 		Block b = new Block();
-		
-		b.setTime(Utils.currentTimeSeconds());
-		b.setPrevBlockHash(new Sha256Hash(lastBlock.getBlockHeaderHash()));
+		b.setTime(System.currentTimeMillis()/1000);
+		b.setPrevBlockHash(new Sha256Hash(lastBlock.getBlockHashWithoutCalculate()));
 		b.setDifficultyTarget(lastBlock.getDifficultyTarget());
 		
 		Transaction coinbaseTx = this.createCoinbaseTx(minerWallet);
@@ -100,7 +71,9 @@ public class Miner {
 		b.addTransactionIntoBlock(coinbaseTx);
 		
 		ArrayList<Transaction> txList = this.pickupTransactionsFromPool(dbConnector, 1);
+		System.out.println("txlist size = " + txList.size());
 		for(Transaction tx : txList){
+			System.out.println("tx = " + tx.getTx_hash().toString());
 			b.addTransactionIntoBlock(tx);
 		}
 
@@ -205,7 +178,7 @@ public class Miner {
 			}
 			Transaction tx = Transaction.deserializeTransaction(txData);
 			
-			if(verifyTransaction(dbConnector, tx)){
+			if(! verifyTransaction(dbConnector, tx)){
 				continue;
 			}
 
@@ -247,20 +220,21 @@ public class Miner {
 									consumer.removeOpcodesFromScriptPubKey(prevScriptPubkey));
 
 			byte[] sigOriginData = consumer.hashModifiedTransactions(txData);
+			
 					
 			if(! equalVerify(prevPubkeyHash, getProcessedPubkeyHash(pubkey) )){
-//				System.out.println("Verify Error: equalVerify");
+				System.out.println("Verify Error: equalVerify");
 				dbConnector.setTransactionVerified(transactionHash, 0);
 				return false;
 			}
 			
 			if(! checkSig(pubkey, signature, sigOriginData)){
-//				System.out.println("Verify Error: checkSig");
+				System.out.println("Verify Error: checkSig");
 				dbConnector.setTransactionVerified(transactionHash, 0);
 				return false;
 			}
 			
-//			System.out.println("verify success : " + transactionHash);
+			System.out.println("verify success : " + transactionHash);
 			dbConnector.setTransactionVerified(transactionHash, 1);
 			
 

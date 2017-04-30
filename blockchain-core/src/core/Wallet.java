@@ -14,6 +14,7 @@ public class Wallet {
 	private String pubKeyPath;
 	private String privKeyPath;
 	private String walletName;
+	DBConnector dbConnector = new DBConnector();
 	
 	public static void main (String [] args){
 		Wallet w = new Wallet();
@@ -79,24 +80,27 @@ public class Wallet {
 		utxoList.add(utxo);
 	}
 	
+	public boolean utxoIsVerified(UnspentTXO utxo){
+		String txHash = utxo.getTransactionHash().toString();
+		return dbConnector.checkTransactionVerified(txHash);
+	}
 	
-	public Transaction createGeneralTransaction(int value, Wallet consumerWallet, Wallet recevierWallet){
+	public Transaction createGeneralTransaction(int value, Wallet consumerWallet, String recevierPubKeyAddress){
 //		public Transaction createGeneralTransaction(ArrayList<UnspentTXO> utxoList, double value, Wallet recevierWallet){
 		BigInteger spentValue = new BigInteger(Integer.toString(value));
 		BigInteger payUTXOAmount = new BigInteger("0");
 		ArrayList<UnspentTXO> readyToSpentTXO = new ArrayList<>();
 		
 		for(UnspentTXO utxo : utxoList){
-			// if pay < spentValue
-			if(payUTXOAmount.compareTo(spentValue) < 0){
-				payUTXOAmount = payUTXOAmount.add(utxo.getValue());
-				readyToSpentTXO.add(utxo);
-				utxo.setSpent(true); // remove the spent TXO from wallet
-//				utxoList.remove(utxo);
-				
+			if( utxoIsVerified(utxo) ){ // if it's a can spend utxo
+				// if pay < spentValue
+				if(payUTXOAmount.compareTo(spentValue) < 0){
+					payUTXOAmount = payUTXOAmount.add(utxo.getValue());
+					readyToSpentTXO.add(utxo);
+					utxo.setSpent(true); // remove the spent TXO from wallet
+				}
 			}
 		}
-		
 		
 		
 		Transaction tx = new Transaction();
@@ -104,7 +108,7 @@ public class Wallet {
 		txOut.setValue(spentValue);
 		
 		// use the first key address.(Simple implementation)
-		byte[] scriptPubKey = recevierWallet.showPubKeyAddress(0).getBytes();
+		byte[] scriptPubKey = recevierPubKeyAddress.getBytes();
 
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_HASH160);
     	scriptPubKey = Utils.prependByte(scriptPubKey, OpCode.OP_DUP);
@@ -156,7 +160,6 @@ public class Wallet {
 		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
 			System.out.println(e.getMessage());
 		}
-		// TODO: 理論上過完makeFunction, 原本的tx裡的Inputs應該也會被改到, 用print驗證看看
 		
 		return tx;
 	}
@@ -195,11 +198,10 @@ public class Wallet {
 		
 		BigInteger balance = this.balance;
 		for(UnspentTXO utxo : utxoList){
-//			System.out.println(i + "- value = " + utxo.getValue());
-//			System.out.println(i + "- isSpent? = " + utxo.isSpent());
-
-			if(! utxo.isSpent()){
-				balance = balance.add(utxo.getValue());
+			if( utxoIsVerified(utxo) ){
+				if(! utxo.isSpent()){
+					balance = balance.add(utxo.getValue());
+				}
 			}
 		}
 		System.out.println("utxoList records = " + utxoList.size());

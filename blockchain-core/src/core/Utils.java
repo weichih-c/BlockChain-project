@@ -496,6 +496,7 @@ public class Utils {
      * @return the decoded byte array
      */
     public static byte[] getHexEncodeByteArray(long num){
+//    	System.out.println("Long = " + num + "' HexString = "+ Long.toHexString(num));
     	return Hex.decode(Long.toHexString(num));
     }
     
