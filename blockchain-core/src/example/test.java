@@ -1,7 +1,9 @@
-package network;
+package example;
 
 import core.Block;
 import core.DBConnector;
+import network.Node;
+import network.NodeCharactor;
 
 public class test {
 
@@ -22,7 +24,6 @@ public class test {
 //		Node chorong = new Node(nameList[0], NodeCharactor.TYPE_MINER);
 //		new Thread(chorong).start();
 //
-//		
 //		Node bomi = new Node(nameList[1], NodeCharactor.TYPE_CLIENT);
 //		new Thread(bomi).start();
 //		

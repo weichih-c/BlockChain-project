@@ -35,7 +35,8 @@ public class Miner {
 		
 		Wallet user = new Wallet("User");
 		Transaction expense = minerWallet.createGeneralTransaction(2050000000, minerWallet, user.showPubKeyAddress(0));
-		dbConnector.saveTransaction(expense);
+//		printTransactionContent(expense);
+//		dbConnector.saveTransaction(expense);
 		
 		miner.mineBlock(minerWallet);
 		
@@ -45,16 +46,48 @@ public class Miner {
 			minerWallet.receiveMoney(expense);
 		}
 		
-		Wallet user2 = new Wallet("User2");
-		Transaction ex2 = user.createGeneralTransaction(1050000000, user, user2.showPubKeyAddress(0));
-		dbConnector.saveTransaction(ex2);
-		user2.receiveMoney(ex2);
-		if(ex2.isAnyChange()){
-			user.receiveMoney(ex2);
-		}
-
-		miner.mineBlock(minerWallet);
+//		Wallet user2 = new Wallet("User2");
+//		Transaction ex2 = user.createGeneralTransaction(1050000000, user, user2.showPubKeyAddress(0));
+//		dbConnector.saveTransaction(ex2);
+//		user2.receiveMoney(ex2);
+//		if(ex2.isAnyChange()){
+//			user.receiveMoney(ex2);
+//		}
+//
+//		miner.mineBlock(minerWallet);
 		
+	}
+	
+	private static void printTransactionContent(Transaction tx){
+		System.out.println("Version = " + tx.getVersion());
+		System.out.println("Transaction Hash = " + tx.getTx_hash().toString());
+		System.out.println("Transaction Input Count = " + tx.getTxInputsSize());
+		ArrayList<TransactionInput> tIns = tx.getTxInputs();
+		for(int a=0; a<tIns.size(); a++){
+			System.out.println("--Input " + a + "--");
+			System.out.println("prevHash = " + tIns.get(a).getPrev_hash());
+			System.out.println("prevOutputIndex = " + tIns.get(a).getPrev_txOut_index());
+			System.out.println("ScriptSigLen = " + tIns.get(a).getScriptLen());
+			System.out.println("ScriptSig = " + Utils.getHexString( tIns.get(a).getScriptSignature() ));
+		}
+		System.out.println("Transaction Output Count = " + tx.getTxOutputsSize());
+		ArrayList<TransactionOutput> tOuts = tx.getTxOutputs();
+		for(int a=0; a<tOuts.size(); a++){
+			System.out.println("--Output " + a + "--");
+			System.out.println("Value = " + tOuts.get(a).getValue());
+			System.out.println("ScriptPubkeyLen = " + tOuts.get(a).getScriptLen());
+			System.out.println("ScriptPubkey = " + Utils.getHexString( tOuts.get(a).getScriptPubKey() ));
+		}
+	}
+	
+	private static void printBlockContent(Block b){
+		System.out.println("Version = " + b.getVersion());
+		System.out.println("Block Hash = " + b.getBlockHeaderHash());
+		System.out.println("Nonce = " + b.getNonce());
+		System.out.println("DifficultyBits = " + b.getDifficultyTarget());
+		System.out.println("PrevBlock Hash = " + b.getPrevBlockHash().toString());
+		System.out.println("MerkleRoot = " + b.getMerkleRoot().toString());
+		System.out.println("Transaction Count = " + b.getTransactionSize());
 	}
 	
 	public void mineBlock(Wallet minerWallet){
@@ -65,26 +98,28 @@ public class Miner {
 		b.setDifficultyTarget(lastBlock.getDifficultyTarget());
 		
 		Transaction coinbaseTx = this.createCoinbaseTx(minerWallet);
+//		printTransactionContent(coinbaseTx);
 		
 		dbConnector.saveTransaction(coinbaseTx);	// test insert
 		dbConnector.setTransactionVerified(coinbaseTx.getTx_hash().toString(), 1); // set coinbaseTx verified
 		b.addTransactionIntoBlock(coinbaseTx);
-		
+//		
 		ArrayList<Transaction> txList = this.pickupTransactionsFromPool(dbConnector, 4);
 //		System.out.println("txlist size = " + txList.size());
 		for(Transaction tx : txList){
 //			System.out.println("tx = " + tx.getTx_hash().toString());
 			b.addTransactionIntoBlock(tx);
 		}
-
+//
 		try {
 			b.setMerkleRoot(calculateMerkleRoot(b.getTransactions()));
 			
 		} catch (Exception e) {
 			System.out.println(e);
 		}
-		
+//		
 		calculateNonce(b);	// create a nonce, and next step is push to chain.
+//		printBlockContent(b);
 		dbConnector.saveBlock(b);
 		
 	}

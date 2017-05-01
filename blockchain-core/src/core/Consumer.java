@@ -47,7 +47,7 @@ public class Consumer {
 		KeyUtils keyUtil = new KeyUtils();
 		PrivateKey privKey = keyUtil.loadPrivateKey(privKeyPath, algorithmName);
 		byte[] pubKey = getPublicKeyEncoded(pubKeyPath);
-		System.out.println("Pubkey Len = " + pubKey.length);
+//		System.out.println("Pubkey Len = " + pubKey.length);
 		ArrayList<TransactionInput> txIns = transaction.getTxInputs();
 		Transaction txCopy = transaction;	// the transaction which is hashed is a copy.
 

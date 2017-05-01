@@ -152,13 +152,13 @@ public class Wallet {
     	tx.addTxOutput(txOut);
     	
 //    	System.out.println("pay money = " + payUTXOAmount.toString(10));
-    	System.out.println("SpentMoney = " + spentValue.doubleValue()*Math.pow(10, -8) + "BTC");
+//    	System.out.println("SpentMoney = " + spentValue.doubleValue()*Math.pow(10, -8) + "BTC");
     	
     	// there are changes after paying
     	if(payUTXOAmount.compareTo(spentValue) > 0){
     		TransactionOutput txOut_Change = new TransactionOutput();
     		BigInteger bi = payUTXOAmount.subtract(spentValue);
-    		System.out.println("Change = " +bi.doubleValue()*Math.pow(10, -8) + "BTC");
+//    		System.out.println("Change = " +bi.doubleValue()*Math.pow(10, -8) + "BTC");
     		txOut_Change.setValue(bi);
     		
     		// use the first key address.(Simple implementation)
