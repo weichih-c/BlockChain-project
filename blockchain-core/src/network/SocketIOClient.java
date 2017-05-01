@@ -349,7 +349,7 @@ public class SocketIOClient {
 				            					outputIndex,
 				            					value,
 				            					scriptPubKey);
-	            			
+	            			updateBalanceOnServer();
 	            		}
 	            			
 	            	}
@@ -363,6 +363,16 @@ public class SocketIOClient {
             	
 			}
 		};
+    }
+    
+    public void updateBalanceOnServer() throws JSONException{
+    	JSONObject message = new JSONObject();
+    	message.put(Constant.SYSTEM_CODE, Constant.TYPE_EVENT);
+    	message.put(Constant.EVENT, Constant.EVENT_UPDATE_BALANCE_ON_SERVER);
+    	String balance = wallet.getBalance() + "BTC";
+    	message.put(Constant.CURRENT_BALANCE, balance);
+    	sendServerMessage(message);
+    	System.out.println("update balance value on server monitor");
     }
     
     private void checkNewPeer(String from, String remoteName, String pubkeyHashAddr){

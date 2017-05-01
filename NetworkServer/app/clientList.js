@@ -15,11 +15,12 @@ module.exports = function() {
   /**
    * Stream object
    */
-  var Client = function(id, name, pubKeyHashAddress, isActive) {
+  var Client = function(id, name, pubKeyHashAddress, isActive, balance) {
 	this.name = name;
 	this.id = id;
 	this.pubKeyHashAddress = pubKeyHashAddress;
 	this.isActive = isActive;
+	this.balance = balance;
   }
 
   return {
@@ -66,6 +67,10 @@ module.exports = function() {
 			return (element.name == name)
 		});
 		return client;
+	},
+
+	updateClientBalance : function(client, currentBalance) {
+		client.balance = currentBalance;
 	},
   }
 };

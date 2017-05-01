@@ -63,6 +63,11 @@ public class Node implements Runnable, ConnectionListener{
 						public void run() {
 //							System.out.println(name + "-action1");
 							miner.mineBlock(wallet);
+							try {
+								mClient.updateBalanceOnServer();
+							} catch (JSONException e) {
+								e.printStackTrace();
+							}
 						}
 						
 					}, 0, 100);
@@ -89,7 +94,7 @@ public class Node implements Runnable, ConnectionListener{
 							if(!canSpend){
 								try {
 									System.out.println(name + " Lack of money, waiting for donation.");
-									Thread.sleep((rand.nextInt(4)+1)*5000);
+									Thread.sleep(5000);
 								} catch (InterruptedException e) {
 									e.printStackTrace();
 								}
@@ -130,6 +135,12 @@ public class Node implements Runnable, ConnectionListener{
 				e.printStackTrace();
 			}
 			wallet.clearWalletSpentTXO(); // clear spent txo
+			
+			try {
+				mClient.updateBalanceOnServer();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			System.out.println(name + " current balance = " + getWalletBalance() + "BTC");
 			return true;
 			

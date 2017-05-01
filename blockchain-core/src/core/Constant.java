@@ -18,6 +18,7 @@ public class Constant {
 	public static final String PEER_LIST = "peerList"; // socketIO string - peerList
 	public static final String CLIENT_MESSAGE_TO = "to";
 	public static final String CLIENT_MESSAGE_FROM = "from";
+	public static final String CURRENT_BALANCE = "currentBalance";
 	
 	// for create utxo
 	public static final String TRANSACTION_HASH = "transactionHash";
@@ -32,6 +33,7 @@ public class Constant {
 	public static final int EVENT_CHECK_ACTIVE = 0x201;
 	public static final int EVENT_CHECK_ACTIVE_RESPONSE = 0x202;
 	public static final int EVENT_RAISE_TRANSACTION = 0x301;
+	public static final int EVENT_UPDATE_BALANCE_ON_SERVER = 0x401;
 	
 	public static String getKeyPath(String keyName){
 		String keyStorePath = System.getProperty("user.dir");

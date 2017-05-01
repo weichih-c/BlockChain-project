@@ -13,6 +13,7 @@ module.exports = function(io, request, clientList) {
 	var TYPE_EVENT = 0x02;
 	var EVENT_ASK_PEER = 0x101;
 	var EVENT_PROVIDE_INIT_PEER = 0x102;
+	var EVENT_UPDATE_BALANCE = 0x401;
 
 	io.on('connection', function(client) {
 
@@ -77,6 +78,8 @@ module.exports = function(io, request, clientList) {
 				if(event == EVENT_ASK_PEER){
 					provideInitPeers();
 
+				}else if(event == EVENT_UPDATE_BALANCE){
+					updateBalance(details.payload);
 				}
 				// handleForward(details.payload);
 			}
@@ -138,6 +141,13 @@ module.exports = function(io, request, clientList) {
 			}
 
 			return array;
+		}
+
+		// update client balance on clientList
+		function updateBalance(payload) {
+			var balance = payload.currentBalance;
+			var currentClient = clientList.getClientByID(client.id);
+			clientList.updateClientBalance(currentClient, balance);
 		}
 
 	});
